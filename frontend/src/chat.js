@@ -29,6 +29,13 @@ window.chatApp = function() {
             this.setupDeepChat();
             
             
+            this.$watch('selectedDatabaseId', (val) => {
+                console.log('🔄 DB Selection Changed:', val);
+                this.$nextTick(() => {
+                    this.applyDeepChatTheme();
+                });
+            });
+
             const lastChat = localStorage.getItem('last_chat_id');
             if (lastChat) {
                 await this.loadMessages(parseInt(lastChat));
@@ -37,71 +44,142 @@ window.chatApp = function() {
 
         toggleTheme() {
             this.theme = UIUtils.toggleTheme();
+            this.$nextTick(() => this.applyDeepChatTheme());
         },
 
         getDeepChatConfig() {
             const isDark = this.theme === 'dark';
+
+            // Colores del sistema de diseño
+            const inputBg     = isDark ? '#2a2a2a' : '#f5f5f7';
+            const inputText   = isDark ? '#ececec' : '#1d1d1f';
+            const inputBorder = isDark ? '1px solid #3c3c3c' : '1px solid #d2d2d7';
+            const focusBorder = isDark ? '2px solid #3b82f6' : '2px solid #007aff';
+            const phColor     = isDark ? '#6b7280' : '#9ca3af';
+
             return {
+                // ✅ Formato oficial Deep Chat: styles anidados
                 textInput: this.selectedDatabaseId ? {
-                    style: {
-                        backgroundColor: isDark ? '#2f2f2f' : '#f5f5f7',
-                        color: isDark ? '#ececec' : '#1d1d1f',
-                        borderRadius: '16px',
-                        border: isDark ? '1px solid #3c3c3c' : '1px solid #d2d2d7',
-                        padding: '12px 16px'
+                    styles: {
+                        container: {
+                            backgroundColor: inputBg,
+                            borderRadius: '20px',
+                            border: inputBorder,
+                            padding: '10px 16px',
+                            transition: 'border 0.2s ease'
+                        },
+                        text: {
+                            color: inputText,
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: '0.95rem'
+                        },
+                        focus: {
+                            border: focusBorder
+                        }
                     },
-                    placeholder: { 
-                        text: 'Escribe tu consulta sobre la base de datos...',
-                        style: { color: isDark ? '#8b949e' : '#86868b' }
+                    placeholder: {
+                        text: 'Consulta sobre tus datos...',
+                        style: {
+                            color: phColor,
+                            fontStyle: 'italic'
+                        }
                     }
                 } : {
                     disabled: true,
-                    placeholder: { 
-                        text: '⚠️ Selecciona una base de datos para comenzar...',
-                        style: { color: isDark ? '#ef4444' : '#dc2626' }
+                    styles: {
+                        container: {
+                            backgroundColor: isDark ? '#1f1f1f' : '#f3f4f6',
+                            borderRadius: '20px',
+                            border: isDark ? '1px solid #3c3c3c' : '1px solid #e5e7eb'
+                        }
+                    },
+                    placeholder: {
+                        text: '\u26a0\ufe0f Primero selecciona una base de datos',
+                        style: {
+                            color: isDark ? '#ef4444' : '#dc2626',
+                            fontStyle: 'italic'
+                        }
                     }
                 },
+
+                // Nombres en español
                 names: {
-                    ai: { text: 'AI Assistant', style: { color: isDark ? '#60a5fa' : '#007aff' } },
-                    user: { text: 'Usuario', style: { color: isDark ? '#8b949e' : '#86868b' } }
+                    ai:   { text: 'Asistente IA', style: { color: isDark ? '#60a5fa' : '#007aff', fontWeight: '600' } },
+                    user: { text: 'T\u00fa',           style: { color: isDark ? '#8b949e' : '#6b7280' } }
                 },
+
+                // Estilos de burbuja
                 messageStyles: {
                     default: {
                         shared: {
                             bubble: {
                                 backgroundColor: 'transparent',
-                                color: isDark ? '#ececec' : '#1d1d1f',
-                                margin: '20px 0',
-                                maxWidth: '85%'
+                                color: inputText,
+                                margin: '16px 0',
+                                maxWidth: '85%',
+                                lineHeight: '1.65',
+                                fontFamily: "'Inter', sans-serif"
                             }
                         },
                         user: {
                             bubble: {
-                                backgroundColor: isDark ? '#2f2f2f' : '#f5f5f7',
-                                padding: '10px 15px',
-                                borderRadius: '18px'
+                                backgroundColor: isDark ? '#2f2f2f' : '#f0f0f0',
+                                padding: '10px 16px',
+                                borderRadius: '18px 18px 4px 18px'
+                            }
+                        },
+                        ai: {
+                            bubble: {
+                                borderRadius: '4px 18px 18px 18px'
                             }
                         }
                     }
                 },
+
+                // Botón de envío
                 submitButtonStyles: {
                     submit: {
                         container: {
                             default: {
-                                backgroundColor: isDark ? '#676767' : '#007aff',
-                                borderRadius: '50%'
+                                backgroundColor: isDark ? '#3b82f6' : '#007aff',
+                                borderRadius: '50%',
+                                width: '36px',
+                                height: '36px'
+                            },
+                            hover: {
+                                backgroundColor: isDark ? '#2563eb' : '#0062cc'
                             }
                         }
                     }
                 },
+
+                // CSS interno del shadow DOM
                 auxiliaryStyle: `
-                    .deep-chat-container { background: var(--bg-main) !important; max-width: 850px !important; margin: 0 auto !important; height: 100% !important; } 
+                    .deep-chat-container {
+                        background: var(--bg-main) !important;
+                        max-width: 860px !important;
+                        margin: 0 auto !important;
+                        height: 100% !important;
+                    }
                     .deep-chat-messages { padding: 2rem 1.5rem !important; }
-                    .chat-message-content { font-family: 'Inter', sans-serif !important; }
-                    pre { background: var(--bg-darker) !important; border-radius: 12px !important; border: 1px solid var(--c-border) !important; padding: 1.5rem !important; margin: 1rem 0 !important; }
-                    code { color: var(--c-primary) !important; font-size: 0.9rem !important; }
-                    ::-webkit-scrollbar { width: 4px; } 
-                    ::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 10px; }
+                    pre {
+                        background: ${isDark ? '#1e1e1e' : '#f8f8f8'} !important;
+                        border-radius: 12px !important;
+                        border: 1px solid ${isDark ? '#3c3c3c' : '#e5e7eb'} !important;
+                        padding: 1.25rem 1.5rem !important;
+                        margin: 1rem 0 !important;
+                        overflow-x: auto !important;
+                    }
+                    code {
+                        color: ${isDark ? '#60a5fa' : '#007aff'} !important;
+                        font-size: 0.88rem !important;
+                        font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+                    }
+                    ::-webkit-scrollbar { width: 4px; }
+                    ::-webkit-scrollbar-thumb {
+                        background: ${isDark ? '#3c3c3c' : '#d2d2d7'};
+                        border-radius: 10px;
+                    }
                 `
             };
         },
@@ -110,6 +188,7 @@ window.chatApp = function() {
             const chatEl = document.getElementById('rag-deep-chat');
             if (!chatEl) return;
 
+            // Conexión al backend
             chatEl.connect = {
                 handler: (body, signals) => {
                     const question = body.messages[body.messages.length - 1].text;
@@ -117,12 +196,28 @@ window.chatApp = function() {
                 }
             };
 
-            // Capture internal events if needed
+            // Eventos internos
             chatEl.onMessage = (body) => {
                 if (!body.isHistory && body.message.role === 'user') {
                     this.isLoading = true;
                 }
             };
+
+            // Aplicar estilos iniciales del tema
+            this.applyDeepChatTheme();
+        },
+
+        // Asigna propiedades de Deep Chat directamente al DOM (método correcto, evita serializar JS)
+        applyDeepChatTheme() {
+            const chatEl = document.getElementById('rag-deep-chat');
+            if (!chatEl) return;
+
+            const cfg = this.getDeepChatConfig();
+            chatEl.textInput         = cfg.textInput;
+            chatEl.names             = cfg.names;
+            chatEl.messageStyles     = cfg.messageStyles;
+            chatEl.submitButtonStyles = cfg.submitButtonStyles;
+            chatEl.auxiliaryStyle    = cfg.auxiliaryStyle;
         },
 
         async sendToAPI(question, signals) {

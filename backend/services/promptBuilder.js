@@ -40,7 +40,7 @@ const buildSQLPrompt = async (question, dbDescription) => {
     systemPromptParts.push(`\nREGLAS ESTRICTAS:
 - Responde ÚNICAMENTE con la consulta SQL. 
 - Solo puedes generar comandos SELECT.
-- Si no te piden un número de registros específico, asume un máximo lógico y asegúrate de limitarlo si no rompe la agregación (por defecto la app luego agregará LIMIT 100 si falta).
+- Si no te piden un número de registros específico, asume un máximo lógico y asegúrate de limitarlo si no rompe la agregación (por defecto la app luego agregará LIMIT 150 si falta).
 - NUNCA uses INSERT, UPDATE, DELETE, DROP.
 - No uses delimitadores de markdown tipo \`\`\`sql en la respuesta, devuelve solo la cadena SQL.`);
 
@@ -62,8 +62,8 @@ Tu trabajo es escribir una respuesta en lenguaje natural para el usuario, basán
 
     // Limit JSON context to prevent context window overflow (safeguard)
     let jsonString = JSON.stringify(sqlResults);
-    if(jsonString.length > 30000) {
-        jsonString = JSON.stringify(sqlResults.slice(0, 50)) + '\n... [Resultados truncados por tamaño]';
+    if(jsonString.length > 90000) {
+        jsonString = JSON.stringify(sqlResults.slice(0, 150)) + '\n... [Resultados truncados por tamaño]';
     }
 
     const userPrompt = `Pregunta original del usuario: "${question}"

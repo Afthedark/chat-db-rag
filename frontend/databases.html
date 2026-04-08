@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,17 +13,19 @@
     <!-- Custom Style -->
     <link href="/style.css" rel="stylesheet">
 </head>
+
 <body class="overflow-hidden">
 
     <div x-data="databasesApp()" x-init="init()" class="d-flex w-100 vh-100 wrapper-scroll">
-        
+
         <!-- Sidebar -->
         <aside class="sidebar d-flex flex-column z-3" :class="{'mobile-open': isSidebarOpen}">
             <div x-show="isSidebarOpen" class="sidebar-overlay d-md-none" @click="isSidebarOpen = false"></div>
-            
-            <div class="sidebar-header p-3 border-bottom border-secondary border-opacity-10 d-flex justify-content-between align-items-center" style="background: var(--bg-darker);">
+
+            <div class="sidebar-header p-3 border-bottom border-secondary border-opacity-10 d-flex justify-content-between align-items-center"
+                style="background: var(--bg-darker);">
                 <h4 class="m-0 fw-bold d-flex align-items-center gap-2 text-primary">
-                    <i class="bi bi-hdd-network"></i> 
+                    <i class="bi bi-hdd-network"></i>
                     <span style="color: var(--c-text-1);">CONEXIONES</span>
                 </h4>
                 <button class="btn btn-link text-light d-md-none p-0" @click="isSidebarOpen = false">
@@ -53,12 +56,15 @@
 
         <!-- Main Panel -->
         <main class="main-panel glass-main p-3 p-md-5 overflow-auto">
-            
+
             <!-- Page Header -->
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-5 gap-3 fade-in">
+            <div
+                class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-5 gap-3 fade-in">
                 <div>
-                    <h2 class="fw-bold m-0"><i class="bi bi-server text-primary me-2"></i> Gestión de Conexiones SQL</h2>
-                    <p class="text-secondary small m-0 pt-2">Configura bases de datos MySQL activas para ejecución de comandos de lectura dinámica (SELECT / SHOW).</p>
+                    <h2 class="fw-bold m-0"><i class="bi bi-server text-primary me-2"></i> Gestión de Conexiones SQL
+                    </h2>
+                    <p class="text-secondary small m-0 pt-2">Configura bases de datos MySQL activas para ejecución de
+                        comandos de lectura dinámica (SELECT / SHOW).</p>
                 </div>
                 <button class="btn btn-primary rounded-pill px-4 fw-bold shadow-lg py-2" @click="openDbModal()">
                     <i class="bi bi-plus-lg me-1"></i> Nueva Conexión
@@ -74,51 +80,77 @@
                                 <!-- Status Overlay Tag -->
                                 <div class="d-flex justify-content-between align-items-start mb-4">
                                     <div class="d-flex align-items-center gap-3">
-                                        <div class="rounded-circle bg-dark border border-secondary border-opacity-25 p-3 d-flex align-items-center justify-content-center text-primary" style="width: 54px; height: 54px">
+                                        <div class="rounded-circle bg-dark border border-secondary border-opacity-25 p-3 d-flex align-items-center justify-content-center text-primary"
+                                            style="width: 54px; height: 54px">
                                             <i class="bi bi-database-check fs-3"></i>
                                         </div>
                                         <div>
-                                            <h5 class="fw-bold m-0 mb-1" style="color: var(--c-text-1);" x-text="db.name"></h5>
-                                            <span class="badge" :class="db.isActive ? 'bg-success text-dark' : 'bg-secondary'" x-text="db.isActive ? 'Activa' : 'Inactiva'"></span>
+                                            <h5 class="fw-bold m-0 mb-1" style="color: var(--c-text-1);"
+                                                x-text="db.name"></h5>
+                                            <span class="badge"
+                                                :class="db.isActive ? 'bg-success text-dark' : 'bg-secondary'"
+                                                x-text="db.isActive ? 'Activa' : 'Inactiva'"></span>
                                         </div>
                                     </div>
                                     <div class="btn-group gap-1">
-                                         <button class="btn btn-link text-info p-2 no-ring" @click="editDatabase(db)" title="Editar">
+                                        <button class="btn btn-link text-info p-2 no-ring" @click="editDatabase(db)"
+                                            title="Editar">
                                             <i class="bi bi-pencil-square fs-5"></i>
-                                         </button>
-                                         <button class="btn btn-link text-danger p-2 no-ring" @click="deleteDatabase(db.id)" title="Eliminar">
+                                        </button>
+                                        <button class="btn btn-link text-danger p-2 no-ring"
+                                            @click="deleteDatabase(db.id)" title="Eliminar">
                                             <i class="bi bi-trash fs-5"></i>
-                                         </button>
+                                        </button>
                                     </div>
                                 </div>
 
-                                <div class="p-3 rounded-4 border border-secondary border-opacity-25 mb-4 shadow-sm" style="background: var(--bg-main);">
-                                     <div class="row row-cols-2 g-3 small">
-                                         <div class="col"><strong class="text-secondary opacity-75">Host:</strong> <span style="color: var(--c-text-1);" x-text="db.host"></span></div>
-                                         <div class="col"><strong class="text-secondary opacity-75">Puerto:</strong> <span style="color: var(--c-text-1);" x-text="db.port"></span></div>
-                                         <div class="col"><strong class="text-secondary opacity-75">Schema:</strong> <span class="text-info fw-bold font-monospace" x-text="db.database"></span></div>
-                                         <div class="col"><strong class="text-secondary opacity-75">Usuario:</strong> <span class="fst-italic" style="color: var(--c-text-1);" x-text="db.user"></span></div>
-                                     </div>
-                                     <p x-show="db.description" class="text-secondary small mt-3 mb-0 pt-2 border-top border-secondary border-opacity-25">
-                                         <i class="bi bi-info-circle me-1"></i> <span x-text="db.description"></span>
-                                     </p>
-                                 </div>
+                                <div class="p-3 rounded-4 border border-secondary border-opacity-25 mb-4 shadow-sm"
+                                    style="background: var(--bg-main);">
+                                    <div class="row row-cols-2 g-3 small">
+                                        <div class="col"><strong class="text-secondary opacity-75">Host:</strong> <span
+                                                style="color: var(--c-text-1);" x-text="db.host"></span></div>
+                                        <div class="col"><strong class="text-secondary opacity-75">Puerto:</strong>
+                                            <span style="color: var(--c-text-1);" x-text="db.port"></span></div>
+                                        <div class="col"><strong class="text-secondary opacity-75">Schema:</strong>
+                                            <span class="text-info fw-bold font-monospace" x-text="db.database"></span>
+                                        </div>
+                                        <div class="col"><strong class="text-secondary opacity-75">Usuario:</strong>
+                                            <span class="fst-italic" style="color: var(--c-text-1);"
+                                                x-text="db.user"></span></div>
+                                    </div>
+                                    <p x-show="db.description"
+                                        class="text-secondary small mt-3 mb-0 pt-2 border-top border-secondary border-opacity-25">
+                                        <i class="bi bi-info-circle me-1"></i> <span x-text="db.description"></span>
+                                    </p>
+                                </div>
 
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="d-flex align-items-center gap-2">
-                                        <button class="btn btn-sm btn-outline-info rounded-pill px-4 border-secondary border-opacity-25 shadow-sm" @click="testConnection(db.id)" :disabled="connectionTests[db.id] === 'testing'">
-                                            <i class="bi bi-lightning-charge-fill me-1 text-warning" x-show="connectionTests[db.id] !== 'testing'"></i>
-                                            <span class="spinner-border spinner-border-sm me-1" x-show="connectionTests[db.id] === 'testing'"></span>
-                                            <span x-text="connectionTests[db.id] === 'testing' ? 'Testeando...' : 'Probar Conexión'"></span>
+                                        <button
+                                            class="btn btn-sm btn-outline-info rounded-pill px-4 border-secondary border-opacity-25 shadow-sm"
+                                            @click="testConnection(db.id)"
+                                            :disabled="connectionTests[db.id] === 'testing'">
+                                            <i class="bi bi-lightning-charge-fill me-1 text-warning"
+                                                x-show="connectionTests[db.id] !== 'testing'"></i>
+                                            <span class="spinner-border spinner-border-sm me-1"
+                                                x-show="connectionTests[db.id] === 'testing'"></span>
+                                            <span
+                                                x-text="connectionTests[db.id] === 'testing' ? 'Testeando...' : 'Probar Conexión'"></span>
                                         </button>
-                                        <span class="small fw-bold fade-in" :class="connectionTests[db.id] === 'success' ? 'text-success' : 'text-danger'" x-show="connectionTests[db.id] && connectionTests[db.id] !== 'testing'">
-                                            <i class="bi" :class="connectionTests[db.id] === 'success' ? 'bi-check-all fs-4' : 'bi-x-circle'"></i>
+                                        <span class="small fw-bold fade-in"
+                                            :class="connectionTests[db.id] === 'success' ? 'text-success' : 'text-danger'"
+                                            x-show="connectionTests[db.id] && connectionTests[db.id] !== 'testing'">
+                                            <i class="bi"
+                                                :class="connectionTests[db.id] === 'success' ? 'bi-check-all fs-4' : 'bi-x-circle'"></i>
                                         </span>
                                     </div>
-                                    
+
                                     <div class="form-check form-switch p-0 m-0 d-flex align-items-center gap-2">
-                                        <label class="small text-secondary fw-medium cursor-pointer" :for="'dbActiveToggle_'+db.id">Status Global</label>
-                                        <input class="form-check-input cursor-pointer" type="checkbox" role="switch" :checked="db.isActive" @change="toggleDatabase(db)" :id="'dbActiveToggle_'+db.id">
+                                        <label class="small text-secondary fw-medium cursor-pointer"
+                                            :for="'dbActiveToggle_'+db.id">Status Global</label>
+                                        <input class="form-check-input cursor-pointer" type="checkbox" role="switch"
+                                            :checked="db.isActive" @change="toggleDatabase(db)"
+                                            :id="'dbActiveToggle_'+db.id">
                                     </div>
                                 </div>
                             </div>
@@ -134,55 +166,84 @@
             <!-- Database Connection Modal -->
             <div class="modal fade" id="dbModal" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content border-secondary border-opacity-50 shadow-lg" style="background: var(--bg-main); color: var(--c-text-1);">
+                    <div class="modal-content border-secondary border-opacity-50 shadow-lg"
+                        style="background: var(--bg-main); color: var(--c-text-1);">
                         <div class="modal-header border-bottom border-secondary border-opacity-25 pb-3">
                             <h5 class="modal-title fw-bold">
                                 <i class="bi bi-plus-circle text-primary me-2"></i>
-                                <span x-text="isEditingDb ? 'Editar Parámetros de Conexión' : 'Nueva Conexión de Datos'"></span>
+                                <span
+                                    x-text="isEditingDb ? 'Editar Parámetros de Conexión' : 'Nueva Conexión de Datos'"></span>
                             </h5>
                             <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"></button>
                         </div>
                         <form @submit.prevent="saveDatabase()">
                             <div class="modal-body p-4">
-                                <div class="alert alert-info py-2 small border-info border-opacity-25 bg-info bg-opacity-10 text-info rounded-4 mb-4 d-flex align-items-start gap-2 shadow-sm">
+                                <div
+                                    class="alert alert-info py-2 small border-info border-opacity-25 bg-info bg-opacity-10 text-info rounded-4 mb-4 d-flex align-items-start gap-2 shadow-sm">
                                     <i class="bi bi-info-circle-fill pt-1"></i>
-                                    <div>El asitente solo ejecutará consultas <strong>READ-ONLY</strong> sobre esta conexión.</div>
+                                    <div>El asitente solo ejecutará consultas <strong>READ-ONLY</strong> sobre esta
+                                        conexión.</div>
                                 </div>
-                                
+
                                 <div class="row g-4">
                                     <div class="col-12">
-                                        <label class="form-label text-secondary fw-bold small opacity-75">Alias de Conexión</label>
-                                        <input type="text" class="form-control border-secondary no-ring" style="background: var(--bg-darker); color: var(--c-text-1);" x-model="dbForm.name" required placeholder="ej: Servidor Ventas 2024">
+                                        <label class="form-label text-secondary fw-bold small opacity-75">Alias de
+                                            Conexión</label>
+                                        <input type="text" class="form-control border-secondary no-ring"
+                                            style="background: var(--bg-darker); color: var(--c-text-1);"
+                                            x-model="dbForm.name" required placeholder="ej: Servidor Ventas 2024">
                                     </div>
                                     <div class="col-md-8">
-                                        <label class="form-label text-secondary fw-bold small opacity-75">Host / Endpoint</label>
-                                        <input type="text" class="form-control border-secondary no-ring px-2" style="background: var(--bg-darker); color: var(--c-text-1);" x-model="dbForm.host" required placeholder="mysql.dominio.com">
+                                        <label class="form-label text-secondary fw-bold small opacity-75">Host /
+                                            Endpoint</label>
+                                        <input type="text" class="form-control border-secondary no-ring px-2"
+                                            style="background: var(--bg-darker); color: var(--c-text-1);"
+                                            x-model="dbForm.host" required placeholder="mysql.dominio.com">
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label text-secondary fw-bold small opacity-75">Puerto</label>
-                                        <input type="number" class="form-control border-secondary no-ring px-2" style="background: var(--bg-darker); color: var(--c-text-1);" x-model.number="dbForm.port" required placeholder="3306">
+                                        <input type="number" class="form-control border-secondary no-ring px-2"
+                                            style="background: var(--bg-darker); color: var(--c-text-1);"
+                                            x-model.number="dbForm.port" required placeholder="3306">
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label text-secondary fw-bold small opacity-75">Username</label>
-                                        <input type="text" class="form-control border-secondary px-2" style="background: var(--bg-darker); color: var(--c-text-1);" x-model="dbForm.user" required>
+                                        <label
+                                            class="form-label text-secondary fw-bold small opacity-75">Username</label>
+                                        <input type="text" class="form-control border-secondary px-2"
+                                            style="background: var(--bg-darker); color: var(--c-text-1);"
+                                            x-model="dbForm.user" required>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label text-secondary fw-bold small opacity-75">Password</label>
-                                        <input type="password" class="form-control border-secondary px-2" style="background: var(--bg-darker); color: var(--c-text-1);" x-model="dbForm.password" :placeholder="isEditingDb ? '(Sin cambios)' : 'Opcional'">
+                                        <label
+                                            class="form-label text-secondary fw-bold small opacity-75">Password</label>
+                                        <input type="password" class="form-control border-secondary px-2"
+                                            style="background: var(--bg-darker); color: var(--c-text-1);"
+                                            x-model="dbForm.password"
+                                            :placeholder="isEditingDb ? '(Sin cambios)' : 'Opcional'">
                                     </div>
                                     <div class="col-12">
-                                        <label class="form-label text-secondary fw-bold small opacity-75">Database (Schema)</label>
-                                        <input type="text" class="form-control border-secondary fw-bold no-ring font-monospace" style="background: var(--bg-darker); color: var(--c-text-1);" x-model="dbForm.database" required>
+                                        <label class="form-label text-secondary fw-bold small opacity-75">Database
+                                            (Schema)</label>
+                                        <input type="text"
+                                            class="form-control border-secondary fw-bold no-ring font-monospace"
+                                            style="background: var(--bg-darker); color: var(--c-text-1);"
+                                            x-model="dbForm.database" required>
                                     </div>
                                     <div class="col-12">
-                                        <label class="form-label text-secondary fw-bold small opacity-75">Descripción para el LLM</label>
-                                        <textarea class="form-control border-secondary no-ring" style="background: var(--bg-darker); color: var(--c-text-1);" rows="2" x-model="dbForm.description" placeholder="Ayuda a la IA a entender qué datos encontrará aquí (ej: Tablas de inventario y pedidos)."></textarea>
+                                        <label class="form-label text-secondary fw-bold small opacity-75">Descripción
+                                            para el LLM</label>
+                                        <textarea class="form-control border-secondary no-ring"
+                                            style="background: var(--bg-darker); color: var(--c-text-1);" rows="2"
+                                            x-model="dbForm.description"
+                                            placeholder="Ayuda a la IA a entender qué datos encontrará aquí (ej: Tablas de inventario y pedidos)."></textarea>
                                     </div>
                                 </div>
                             </div>
                             <div class="modal-footer border-top border-secondary border-opacity-25 pb-3 pe-4">
-                                <button type="button" class="btn btn-outline-secondary border-0 px-4" data-bs-dismiss="modal">Cerrar</button>
-                                <button type="submit" class="btn btn-primary fw-bold px-5 py-2">Guardar Conexión</button>
+                                <button type="button" class="btn btn-outline-secondary border-0 px-4"
+                                    data-bs-dismiss="modal">Cerrar</button>
+                                <button type="submit" class="btn btn-primary fw-bold px-5 py-2">Guardar
+                                    Conexión</button>
                             </div>
                         </form>
                     </div>
@@ -198,4 +259,5 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="/src/databases.js"></script>
 </body>
+
 </html>
