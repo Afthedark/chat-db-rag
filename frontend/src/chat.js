@@ -237,6 +237,7 @@ window.chatApp = function() {
             try {
                 const res = await axios.post('/api/chat', payload);
                 if (res.data.success) {
+                    const isNewChat = !this.currentChatId;
                     this.currentChatId = res.data.historyId;
                     localStorage.setItem('last_chat_id', this.currentChatId);
                     
@@ -259,7 +260,16 @@ window.chatApp = function() {
                         signals.onResponse({ text: res.data.reply });
                     }
                     
-                    // Actualizar silenciosamente el historial de recuadros laterales
+                    // Actualización optimista: Si es un nuevo chat, lo añadimos al inicio de la lista
+                    if (isNewChat) {
+                        this.chats.unshift({
+                            id: this.currentChatId,
+                            title: question.substring(0, 30) + (question.length > 30 ? '...' : ''),
+                            databaseId: parseInt(this.selectedDatabaseId)
+                        });
+                    }
+                    
+                    // Actualizar el historial completo en segundo plano
                     this.loadChats();
                 }
             } catch (error) {
@@ -306,18 +316,28 @@ window.chatApp = function() {
         },
 
         async newChat() {
+            console.log('✨ Starting New Chat flow...');
             this.currentChatId = null;
             this.messages = [];
             this.selectedDatabaseId = '';
+            this.isLoading = false;
+            
             localStorage.removeItem('last_chat_id');
             const chatEl = document.getElementById('rag-deep-chat');
-            if (chatEl) chatEl.clearMessages(true);
+            if (chatEl) {
+                chatEl.clearMessages(true);
+                chatEl.history = []; // Asegurar limpieza total del componente
+            }
             
             // Disparar modal de selección
             await this.promptDatabaseSelection();
         },
 
         async promptDatabaseSelection() {
+            if (this.activeDatabases.length === 0) {
+                await this.loadActiveDatabases();
+            }
+
             const dbOptions = {};
             this.activeDatabases.forEach(db => {
                 dbOptions[db.id] = db.name;
@@ -329,21 +349,25 @@ window.chatApp = function() {
                 inputOptions: dbOptions,
                 inputPlaceholder: 'Elige el target...',
                 showCancelButton: true,
+                confirmButtonText: 'Conectar',
+                cancelButtonText: 'Cancelar',
                 ...UIUtils.getSwalConfig(),
                 inputValidator: (value) => {
-                    return new Promise((resolve) => {
-                        if (value) {
-                            resolve();
-                        } else {
-                            resolve('Debes seleccionar una base de datos');
-                        }
-                    });
+                    if (!value) return 'Debes seleccionar una base de datos';
                 }
             });
 
             if (dbId) {
-                this.selectedDatabaseId = dbId;
+                // Forzar que sea string para consistencia con x-model si es necesario, 
+                // aunque Alpine suele manejar ambos.
+                this.selectedDatabaseId = dbId.toString();
                 this.showToast(`Conectado a ${dbOptions[dbId]}`, 'success');
+                
+                // Pequeño delay para que el input se habilite suavemente
+                setTimeout(() => {
+                    const chatEl = document.getElementById('rag-deep-chat');
+                    if (chatEl) chatEl.focus();
+                }, 100);
             }
         },
 
@@ -356,10 +380,16 @@ window.chatApp = function() {
                     this.messages = res.data.data;
                     
                     // Recover DB context
-                    const lastAssistant = [...this.messages].reverse().find(m => m.role === 'assistant' && m.databaseUsed);
-                    if (lastAssistant) {
-                        const dbObj = this.activeDatabases.find(d => d.name === lastAssistant.databaseUsed);
-                        if (dbObj) this.selectedDatabaseId = dbObj.id;
+                    const chatObj = this.chats.find(c => c.id == chatId);
+                    if (chatObj && chatObj.databaseId) {
+                        this.selectedDatabaseId = chatObj.databaseId.toString();
+                    } else {
+                        // Fallback: Scan messages for DB name (backward compatibility)
+                        const lastAssistant = [...this.messages].reverse().find(m => m.role === 'assistant' && m.databaseUsed);
+                        if (lastAssistant) {
+                            const dbObj = this.activeDatabases.find(d => d.name === lastAssistant.databaseUsed);
+                            if (dbObj) this.selectedDatabaseId = dbObj.id.toString();
+                        }
                     }
 
                     const chatEl = document.getElementById('rag-deep-chat');

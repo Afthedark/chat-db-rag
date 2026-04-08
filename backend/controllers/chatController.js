@@ -26,7 +26,10 @@ const handleChat = async (req, res, next) => {
         if (!currentChatId) {
             let title = question.substring(0, 30);
             if (question.length > 30) title += '...';
-            const newChat = await Chat.create({ title });
+            const newChat = await Chat.create({ 
+                title, 
+                databaseId: targetDbId 
+            });
             currentChatId = newChat.id;
         }
 

@@ -3,6 +3,10 @@ module.exports = (sequelize, DataTypes) => {
         title: {
             type: DataTypes.STRING,
             allowNull: true
+        },
+        databaseId: {
+            type: DataTypes.INTEGER,
+            allowNull: true
         }
     });
     return Chat;
