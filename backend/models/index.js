@@ -7,8 +7,8 @@ const ContextRule = require('./ContextRule')(sequelize, DataTypes);
 const DatabaseConnection = require('./DatabaseConnection')(sequelize, DataTypes);
 
 // Relationships
-Chat.hasMany(Message, { onDelete: 'CASCADE' });
-Message.belongsTo(Chat);
+Chat.hasMany(Message, { foreignKey: 'chatId', onDelete: 'CASCADE' });
+Message.belongsTo(Chat, { foreignKey: 'chatId' });
 
 module.exports = {
     sequelize,

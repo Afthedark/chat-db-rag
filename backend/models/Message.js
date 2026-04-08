@@ -15,6 +15,10 @@ module.exports = (sequelize, DataTypes) => {
         databaseUsed: {
             type: DataTypes.STRING,
             allowNull: true
+        },
+        chatId: {
+            type: DataTypes.INTEGER,
+            allowNull: false
         }
     });
     return Message;
