@@ -26,10 +26,18 @@ window.databasesApp = function() {
             description: '',
             isActive: true
         },
+        theme: 'dark',
 
         async init() {
+            this.initTheme();
             console.log('📦 DB Connections Manager Initialized');
             await this.loadDatabases();
+        },
+
+        initTheme() {
+            this.theme = localStorage.getItem('app-theme') || 
+                         (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', this.theme);
         },
 
         async loadDatabases() {
@@ -100,8 +108,8 @@ window.databasesApp = function() {
                 confirmButtonColor: '#d33',
                 cancelButtonColor: '#3085d6',
                 confirmButtonText: 'Sí, desvincular ahora',
-                background: '#161b22',
-                color: '#fff'
+                background: this.theme === 'dark' ? '#161b22' : '#ffffff',
+                color: this.theme === 'dark' ? '#fff' : '#1e293b'
             });
 
             if (!confirmed.isConfirmed) return;
@@ -144,8 +152,8 @@ window.databasesApp = function() {
                 timerProgressBar: true,
                 icon: icon,
                 title: message,
-                background: '#161b22',
-                color: '#fff'
+                background: this.theme === 'dark' ? '#161b22' : '#ffffff',
+                color: this.theme === 'dark' ? '#fff' : '#1e293b'
             });
         }
     }

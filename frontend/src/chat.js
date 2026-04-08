@@ -4,6 +4,7 @@ window.chatApp = function() {
         isSidebarOpen: false,
         isLoading: false,
         currentChatId: null,
+        theme: 'dark', // 'light' or 'dark'
         
         // --- DATA ---
         chats: [],
@@ -21,12 +22,88 @@ window.chatApp = function() {
             await this.loadActiveDatabases();
             await this.loadChats();
             await this.loadSystemInfo();
+            
+            // Cargar Tema desde Utils
+            this.theme = UIUtils.initTheme();
+            
             this.setupDeepChat();
+            
             
             const lastChat = localStorage.getItem('last_chat_id');
             if (lastChat) {
                 await this.loadMessages(parseInt(lastChat));
             }
+        },
+
+        toggleTheme() {
+            this.theme = UIUtils.toggleTheme();
+        },
+
+        getDeepChatConfig() {
+            const isDark = this.theme === 'dark';
+            return {
+                textInput: this.selectedDatabaseId ? {
+                    style: {
+                        backgroundColor: isDark ? '#2f2f2f' : '#f5f5f7',
+                        color: isDark ? '#ececec' : '#1d1d1f',
+                        borderRadius: '16px',
+                        border: isDark ? '1px solid #3c3c3c' : '1px solid #d2d2d7',
+                        padding: '12px 16px'
+                    },
+                    placeholder: { 
+                        text: 'Escribe tu consulta sobre la base de datos...',
+                        style: { color: isDark ? '#8b949e' : '#86868b' }
+                    }
+                } : {
+                    disabled: true,
+                    placeholder: { 
+                        text: '⚠️ Selecciona una base de datos para comenzar...',
+                        style: { color: isDark ? '#ef4444' : '#dc2626' }
+                    }
+                },
+                names: {
+                    ai: { text: 'AI Assistant', style: { color: isDark ? '#60a5fa' : '#007aff' } },
+                    user: { text: 'Usuario', style: { color: isDark ? '#8b949e' : '#86868b' } }
+                },
+                messageStyles: {
+                    default: {
+                        shared: {
+                            bubble: {
+                                backgroundColor: 'transparent',
+                                color: isDark ? '#ececec' : '#1d1d1f',
+                                margin: '20px 0',
+                                maxWidth: '85%'
+                            }
+                        },
+                        user: {
+                            bubble: {
+                                backgroundColor: isDark ? '#2f2f2f' : '#f5f5f7',
+                                padding: '10px 15px',
+                                borderRadius: '18px'
+                            }
+                        }
+                    }
+                },
+                submitButtonStyles: {
+                    submit: {
+                        container: {
+                            default: {
+                                backgroundColor: isDark ? '#676767' : '#007aff',
+                                borderRadius: '50%'
+                            }
+                        }
+                    }
+                },
+                auxiliaryStyle: `
+                    .deep-chat-container { background: var(--bg-main) !important; max-width: 850px !important; margin: 0 auto !important; height: 100% !important; } 
+                    .deep-chat-messages { padding: 2rem 1.5rem !important; }
+                    .chat-message-content { font-family: 'Inter', sans-serif !important; }
+                    pre { background: var(--bg-darker) !important; border-radius: 12px !important; border: 1px solid var(--c-border) !important; padding: 1.5rem !important; margin: 1rem 0 !important; }
+                    code { color: var(--c-primary) !important; font-size: 0.9rem !important; }
+                    ::-webkit-scrollbar { width: 4px; } 
+                    ::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 10px; }
+                `
+            };
         },
 
         setupDeepChat() {
@@ -140,7 +217,39 @@ window.chatApp = function() {
             localStorage.removeItem('last_chat_id');
             const chatEl = document.getElementById('rag-deep-chat');
             if (chatEl) chatEl.clearMessages(true);
-            this.showToast('Nueva sesión iniciada', 'success');
+            
+            // Disparar modal de selección
+            await this.promptDatabaseSelection();
+        },
+
+        async promptDatabaseSelection() {
+            const dbOptions = {};
+            this.activeDatabases.forEach(db => {
+                dbOptions[db.id] = db.name;
+            });
+
+            const { value: dbId } = await Swal.fire({
+                title: 'Selecciona Base de Datos',
+                input: 'select',
+                inputOptions: dbOptions,
+                inputPlaceholder: 'Elige el target...',
+                showCancelButton: true,
+                ...UIUtils.getSwalConfig(),
+                inputValidator: (value) => {
+                    return new Promise((resolve) => {
+                        if (value) {
+                            resolve();
+                        } else {
+                            resolve('Debes seleccionar una base de datos');
+                        }
+                    });
+                }
+            });
+
+            if (dbId) {
+                this.selectedDatabaseId = dbId;
+                this.showToast(`Conectado a ${dbOptions[dbId]}`, 'success');
+            }
         },
 
         async loadMessages(chatId, updateUI = true) {
@@ -196,19 +305,12 @@ window.chatApp = function() {
         },
 
         async deleteChat(id) {
-            if (typeof Swal === 'undefined') return;
-
             const confirmed = await Swal.fire({
                 title: '¿Confirmas borrar?',
                 text: "No podrás recuperar este historial.",
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#3B82F6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Sí, borrar',
-                cancelButtonText: 'Cancelar',
-                background: '#161b22',
-                color: '#fff'
+                ...UIUtils.getSwalConfig()
             });
 
             if (!confirmed.isConfirmed) return;
@@ -229,19 +331,7 @@ window.chatApp = function() {
         },
 
         showToast(message, icon = 'info') {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    toast: true,
-                    position: 'bottom-end',
-                    showConfirmButton: false,
-                    timer: 3000,
-                    timerProgressBar: true,
-                    icon: icon,
-                    title: message,
-                    background: '#161b22',
-                    color: '#fff'
-                });
-            }
+            UIUtils.showToast(message, icon);
         }
     }
 }

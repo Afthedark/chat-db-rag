@@ -9,12 +9,12 @@ El sistema se conecta a múltiples bases de datos de forma dinámica, captura un
 ## 📋 Características Principales
 
 *   **Arquitectura MPA (Multi-Page Architecture):** Reconstrucción robusta con páginas dedicadas para Chat, Administración de Reglas y Conexiones.
-*   **Two-Pass RAG Architecture:** Un modelo IA genera el código SQL y un segundo lo interpreta.
+*   **Deep Chat Integration:** Interfaz de chat moderna y fluida utilizando el componente `deep-chat`, con soporte nativo para renders de Markdown y SQL.
+*   **Sistema de Temas Dual (Light/Dark Mode):** Estética premium inspirada en Qwen/Charcoal (Oscuro) y Apple Slate (Claro), totalmente gestionable por el usuario.
+*   **Two-Pass RAG Architecture:** Un modelo IA genera el código SQL y un segundo lo interpreta para mayor precisión.
 *   **Conexiones Dinámicas:** Configura y administra distintas bases de datos objetivo desde el frontend sin tocar código. Soporta puertos personalizados.
 *   **Agnóstico de IA:** Soporte para LLMs locales (Ollama) o modelos de terceros mediante el SDK oficial de OpenAI (compatible con OpenRouter).
-*   **Backend de Memoria (Sequelize):** Guarda el historial de chats, las reglas RAG dinámicas y las credenciales de tus BDs en un esquema aparte (`ai_memory_db`).
-*   **Soporte MySQL 8:** Compatible con los nuevos métodos de autenticación de MySQL 8 gracias al uso de `mysql2`.
-*   **Frontend Modular:** Creado con diseño moderno (Glassmorphism), Alpine.js para controladores aislados y Axios para consumo de API.
+*   **Frontend Modular & Centralizado:** Uso de `Alpine.js` para reactividad ligera y `utils.js` para un sistema de diseño y utilidades unificado (toasts, temas, modales).
 *   **Control de Reglas de IA (Admin):** Agrega y enciende directrices (Prompts dinámicos, Schemas, Few-Shots) al vuelo desde el dashboard dedicado.
 
 ## 🛡️ Estricta Seguridad SQL
@@ -105,19 +105,14 @@ Accede desde tu navegador: 👉 [http://localhost:3000](http://localhost:3000)
 │   ├── /services        # AI Service, SQL Validator y DB Connection Manager.
 │   └── server.js        # Entry point.
 ├── /frontend
-│   ├── index.html       # Página de Chat Principal.
+│   ├── index.html       # Página de Chat Principal (Deep Chat).
 │   ├── rules.html       # Panel de Reglas AI.
 │   ├── databases.html   # Panel de Conexiones DB.
-│   ├── style.css        # Estilos Globales (Glassmorphism).
+│   ├── style.css        # Estilos Globales (Qwen/Apple inspired).
 │   └── /src             # Lógica modular Alpine.js
 │       ├── chat.js      # Controller Chat.
 │       ├── rules.js     # Controller Reglas.
-│       └── databases.js # Controller Bases de Datos.
+│       ├── databases.js # Controller Bases de Datos.
+│       └── utils.js     # Sistema de Temas y Utilidades Globales.
 └── README.md
 ```
-Interfaz de usuario.
-│   ├── app.js           # Lógica Alpine.js y consumo de API.
-│   └── style.css        # Diseño Glassmorphism.
-└── README.md
-```
-
