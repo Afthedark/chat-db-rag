@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reglas RAG | Admin Panel</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Custom Style -->
+    <link href="/style.css" rel="stylesheet">
+</head>
+<body class="bg-main-dark text-light overflow-hidden">
+
+    <div x-data="rulesApp()" x-init="init()" class="d-flex w-100 vh-100 wrapper-scroll">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar d-flex flex-column z-3" :class="{'mobile-open': isSidebarOpen}">
+            <div x-show="isSidebarOpen" class="sidebar-overlay d-md-none" @click="isSidebarOpen = false"></div>
+            
+            <div class="sidebar-header p-3 border-bottom border-secondary d-flex justify-content-between align-items-center">
+                <h4 class="m-0 fw-bold d-flex align-items-center gap-2 text-primary">
+                    <i class="bi bi-gear-wide-connected"></i> 
+                    <span>ADMIN PANEL</span>
+                </h4>
+                <button class="btn btn-link text-light d-md-none p-0" @click="isSidebarOpen = false">
+                    <i class="bi bi-x-lg fs-4"></i>
+                </button>
+            </div>
+
+            <!-- Dashboard Navigation -->
+            <nav class="p-2">
+                <ul class="nav flex-column gap-1">
+                    <li class="nav-item border-bottom border-secondary border-opacity-25 pb-2 mb-2">
+                        <a href="/" class="nav-link w-100 text-start btn-custom rounded-3">
+                            <i class="bi bi-arrow-left-circle me-2"></i> Volver al Chat
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/rules" class="nav-link w-100 text-start btn-custom rounded-3 active-nav">
+                            <i class="bi bi-file-earmark-code me-2"></i> Reglas de IA
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/databases" class="nav-link w-100 text-start btn-custom rounded-3">
+                            <i class="bi bi-database me-2"></i> Bases de Datos
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Panel -->
+        <main class="main-panel glass-main p-3 p-md-5 overflow-auto">
+            
+            <!-- Page Header -->
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3 fade-in">
+                <div>
+                    <h2 class="fw-bold m-0"><i class="bi bi-shield-lock text-primary me-2"></i> Reglas de Contexto RAG</h2>
+                    <p class="text-secondary small m-0 pt-1">Define prompts de sistema, esquemas de bases de datos y ejemplos pocos-tiros (few-shot) para guiar al modelo SQL.</p>
+                </div>
+                <button class="btn btn-primary rounded-pill px-4 fw-bold shadow-lg py-2" @click="openRuleModal()">
+                    <i class="bi bi-plus-lg me-1"></i> Nueva Regla
+                </button>
+            </div>
+
+            <!-- Category Filters -->
+            <div class="mb-4 d-flex gap-2 flex-wrap fade-in">
+                <button class="btn rounded-pill badge-filter border-secondary border-opacity-50" :class="categoryFilter === '' ? 'btn-primary' : 'btn-outline-secondary'" @click="categoryFilter = ''">Todos</button>
+                <button class="btn rounded-pill badge-filter border-secondary border-opacity-50" :class="categoryFilter === 'PROMPT_SISTEMA' ? 'btn-info text-dark' : 'btn-outline-secondary'" @click="categoryFilter = 'PROMPT_SISTEMA'">Sistema</button>
+                <button class="btn rounded-pill badge-filter border-secondary border-opacity-50" :class="categoryFilter === 'ESTRUCTURA_DB' ? 'btn-warning text-dark' : 'btn-outline-secondary'" @click="categoryFilter = 'ESTRUCTURA_DB'">Esquemas DB</button>
+                <button class="btn rounded-pill badge-filter border-secondary border-opacity-50" :class="categoryFilter === 'EJEMPLO_SQL' ? 'btn-success' : 'btn-outline-secondary'" @click="categoryFilter = 'EJEMPLO_SQL'">Ejemplos SQL</button>
+                <button class="btn rounded-pill badge-filter border-secondary border-opacity-50" :class="categoryFilter === 'PROMPT_NEGOCIO' ? 'btn-danger' : 'btn-outline-secondary'" @click="categoryFilter = 'PROMPT_NEGOCIO'">Negocio</button>
+            </div>
+
+            <!-- Rules Table Content -->
+            <div class="table-responsive bg-dark bg-opacity-25 rounded-4 border border-secondary border-opacity-25 p-3 fade-in">
+                <table class="table table-dark table-hover align-middle mb-0 custom-table">
+                    <thead>
+                        <tr>
+                            <th class="text-secondary fw-normal">Key</th>
+                            <th class="text-secondary fw-normal">Categoría</th>
+                            <th class="text-secondary fw-normal">Snippet</th>
+                            <th class="text-secondary fw-normal text-center">Estado</th>
+                            <th class="text-secondary fw-normal text-end pe-3">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="border-top-0">
+                        <template x-for="rule in filteredRules()" :key="rule.id">
+                            <tr class="fade-in">
+                                <td class="font-monospace text-light fw-bold" style="font-size: 0.9rem" x-text="rule.key"></td>
+                                <td>
+                                    <span class="badge rounded-pill shadow-sm" :class="getCategoryBadgeClass(rule.category)" x-text="rule.category"></span>
+                                </td>
+                                <td class="text-truncate text-secondary small" style="max-width: 300px;" x-text="rule.content"></td>
+                                <td class="text-center">
+                                    <div class="form-check form-switch d-flex justify-content-center m-0">
+                                        <input class="form-check-input cursor-pointer" type="checkbox" role="switch" :checked="rule.isActive" @change="toggleRule(rule)">
+                                    </div>
+                                </td>
+                                <td class="text-end pe-3">
+                                    <div class="btn-group gap-1">
+                                        <button class="btn btn-sm btn-outline-info border-0 rounded-3 p-2" title="Editar" @click="editRule(rule)">
+                                            <i class="bi bi-pencil-square fs-5"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger border-0 rounded-3 p-2" title="Eliminar" @click="deleteRule(rule.id)">
+                                            <i class="bi bi-trash fs-5"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                        <tr x-show="filteredRules().length === 0">
+                            <td colspan="5" class="text-center py-5 text-muted fst-italic">No se encontraron reglas en este contexto.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Rule Modal -->
+            <div class="modal fade" id="ruleModal" tabindex="-1" data-bs-theme="dark" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content bg-dark border-secondary border-opacity-50 shadow-lg">
+                        <div class="modal-header border-bottom border-secondary border-opacity-25 pb-3">
+                            <h5 class="modal-title fw-bold">
+                                <i class="bi" :class="isEditingRule ? 'bi-pencil-square' : 'bi-plus-circle'"></i> 
+                                <span x-text="isEditingRule ? 'Editar Regla de Contexto' : 'Nueva Regla del Modelo RAG'"></span>
+                            </h5>
+                            <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form @submit.prevent="saveRule()">
+                            <div class="modal-body p-4">
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-secondary fw-bold small opacity-75">Key (ID único)</label>
+                                        <input type="text" class="form-control bg-dark border-secondary text-light font-monospace small no-ring" x-model="ruleForm.key" required pattern="[A-Za-z0-9_]+" placeholder="ej_ventas_ddl">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-secondary fw-bold small opacity-75">Categoría Técnica</label>
+                                        <select class="form-select bg-dark border-secondary text-light no-ring" x-model="ruleForm.category" required>
+                                            <option value="PROMPT_SISTEMA">PROMPT_SISTEMA (Prompt Base)</option>
+                                            <option value="ESTRUCTURA_DB">ESTRUCTURA_DB (DDL / Tablas)</option>
+                                            <option value="EJEMPLO_SQL">EJEMPLO_SQL (Ejemplos Few-Shot)</option>
+                                            <option value="PROMPT_NEGOCIO">PROMPT_NEGOCIO (Instrucciones Post-SQL)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <label class="form-label text-secondary fw-bold small opacity-75">Contenido (Snippet / Texto)</label>
+                                            <div class="form-check form-switch m-0 d-flex align-items-center gap-2">
+                                                <label class="form-check-label small opacity-75" for="ruleActiveCheck">Regla Activa</label>
+                                                <input class="form-check-input mt-0" type="checkbox" role="switch" x-model="ruleForm.isActive" id="ruleActiveCheck">
+                                            </div>
+                                        </div>
+                                        <textarea class="form-control bg-dark border-secondary text-light font-monospace p-3 no-ring" rows="10" x-model="ruleForm.content" required style="font-size: 0.9rem;" placeholder="Inserta aquí el DDL, prompt o ejemplos en formato JSON/Texto..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-top border-secondary border-opacity-25 p-3">
+                                <button type="button" class="btn btn-outline-secondary border-0 px-4" data-bs-dismiss="modal">Cerrar</button>
+                                <button type="submit" class="btn btn-primary fw-bold px-5 py-2">Guardar Regla</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/src/rules.js"></script>
+</body>
+</html>
