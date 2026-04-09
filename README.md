@@ -10,12 +10,14 @@ El sistema se conecta a múltiples bases de datos de forma dinámica, captura un
 
 *   **Arquitectura MPA (Multi-Page Architecture):** Reconstrucción robusta con páginas dedicadas para Chat, Administración de Reglas y Conexiones.
 *   **Deep Chat Integration:** Interfaz de chat moderna y fluida utilizando el componente `deep-chat`, con soporte nativo para renders de Markdown y SQL.
+*   **Visualización de Datos:** Genera gráficos interactivos (barras, líneas, pastel, dona) a partir de los resultados SQL usando Chart.js.
 *   **Sistema de Temas Dual (Light/Dark Mode):** Estética premium inspirada en Qwen/Charcoal (Oscuro) y Apple Slate (Claro), totalmente gestionable por el usuario.
 *   **Two-Pass RAG Architecture:** Un modelo IA genera el código SQL y un segundo lo interpreta para mayor precisión.
+*   **Extracción Robusta de SQL:** Maneja respuestas de LLMs que generan múltiples SQLs, markdown o texto explicativo.
 *   **Conexiones Dinámicas:** Configura y administra distintas bases de datos objetivo desde el frontend sin tocar código. Soporta puertos personalizados.
 *   **Agnóstico de IA:** Soporte para LLMs locales (Ollama) o modelos de terceros mediante el SDK oficial de OpenAI (compatible con OpenRouter).
 *   **Frontend Modular & Centralizado:** Uso de `Alpine.js` para reactividad ligera y `utils.js` para un sistema de diseño y utilidades unificado (toasts, temas, modales).
-*   **Control de Reglas de IA (Admin):** Agrega y enciende directrices (Prompts dinámicos, Schemas, Few-Shots) al vuelo desde el dashboard dedicado.
+*   **Control de Reglas de IA (Admin):** Gestión simplificada con 2 categorías intuitivas (Esquemas e Instrucciones) en lugar de 4 técnicas.
 
 ## 🛡️ Estricta Seguridad SQL
 
@@ -24,6 +26,7 @@ Para salvaguardar las bases de datos transaccionales donde se consultan los dato
 *   Solo se admiten comandos estructurados que empiezan con `SELECT`, `SHOW`, `DESCRIBE` o referencias `WITH`.
 *   Existe una capa de denegación absoluta para comandos destructivos o de escritura como `INSERT`, `UPDATE`, `DELETE`, `DROP`, `TRUNCATE`, `ALTER`.
 *   Se previene la inyección de consultas divididas (`multi-statements`) para evitar sub-rutinas disfrazadas al final de la lectura.
+*   Extracción inteligente del primer SQL válido cuando la IA genera múltiples consultas o texto explicativo.
 *   **Se recomienda de igual manera utilizar únicamente usuarios con privilegios `READ ONLY` a nivel MySql para las conexiones objetivo.**
 
 ---
@@ -33,7 +36,7 @@ Para salvaguardar las bases de datos transaccionales donde se consultan los dato
 *   **Backend:** Node.js v18+, Express.js.
 *   **IA SDK:** OpenAI SDK (para OpenRouter) y Axios (para Ollama local).
 *   **ORMs & Data:** Sequelize (MySQL base de memoria), mysql2 (Connection Pooling dinámico a BDs objetivo).
-*   **Frontend:** HTML5, CSS Variables, Alpine.js, Bootstrap 5, PrismJS (SQL Syntax).
+*   **Frontend:** HTML5, CSS Variables, Alpine.js, Bootstrap 5, PrismJS (SQL Syntax), Chart.js (Visualización).
 
 ---
 
@@ -86,9 +89,21 @@ npm run dev
 ### 5. Utilización y Rutas
 Accede desde tu navegador: 👉 [http://localhost:3000](http://localhost:3000)
 
-*   **Chat RAG (`/`)**: Interfaz principal de chateo inteligente.
-*   **Administración de Reglas (`/admin/rules`)**: Gestión de prompts de sistema y esquemas DDL.
+*   **Chat RAG (`/`)**: Interfaz principal de chateo inteligente con visualización de gráficos.
+*   **Administración de Reglas (`/admin/rules`)**: Gestión simplificada de prompts y esquemas (2 categorías).
 *   **Gestión de Bases de Datos (`/admin/databases`)**: Configuración de pools de conexión.
+
+---
+
+## 📊 Visualización de Datos
+
+El sistema incluye integración con Chart.js para generar gráficos interactivos a partir de los resultados SQL:
+
+*   **Tipos de gráfico:** Barras, Líneas, Pastel, Dona.
+*   **Detección automática:** Identifica columnas numéricas y categóricas.
+*   **Múltiples métricas:** Visualiza varias columnas numéricas simultáneamente.
+*   **Descarga:** Exporta los gráficos como imágenes PNG.
+*   **Adaptativo:** Se ajusta al tema oscuro/claro del sistema.
 
 ---
 
@@ -102,17 +117,29 @@ Accede desde tu navegador: 👉 [http://localhost:3000](http://localhost:3000)
 │   ├── /middleware      # Manejo de errores y ruteo central.
 │   ├── /models          # Modelos de Sequelize.
 │   ├── /routes          # Rutas API y Rutas de Servido HTML (MPA).
-│   ├── /services        # AI Service, SQL Validator y DB Connection Manager.
+│   ├── /services        # AI Service, SQL Validator, Prompt Builder, DB Manager.
 │   └── server.js        # Entry point.
 ├── /frontend
-│   ├── index.html       # Página de Chat Principal (Deep Chat).
-│   ├── rules.html       # Panel de Reglas AI.
+│   ├── index.html       # Página de Chat Principal (Deep Chat + Chart.js).
+│   ├── rules.html       # Panel de Reglas AI (2 categorías simplificadas).
 │   ├── databases.html   # Panel de Conexiones DB.
 │   ├── style.css        # Estilos Globales (Qwen/Apple inspired).
 │   └── /src             # Lógica modular Alpine.js
-│       ├── chat.js      # Controller Chat.
-│       ├── rules.js     # Controller Reglas.
+│       ├── chat.js      # Controller Chat con visualización de gráficos.
+│       ├── rules.js     # Controller Reglas simplificado.
 │       ├── databases.js # Controller Bases de Datos.
 │       └── utils.js     # Sistema de Temas y Utilidades Globales.
 └── README.md
 ```
+
+---
+
+## 🔧 Optimizaciones para LLMs Locales
+
+El sistema está optimizado para funcionar con modelos locales (Ollama) de contexto limitado (128K tokens):
+
+*   **Sampling inteligente:** Muestreo de resultados SQL grandes para no saturar el contexto.
+*   **Límite de registros:** Auto-limita a 100 registros las consultas sin LIMIT.
+*   **Truncamiento de esquemas:** Limita el tamaño del esquema de BD enviado al LLM.
+*   **Historial reducido:** Solo los últimos 3 mensajes de contexto en lugar de 6.
+*   **Contexto optimizado:** Límite de ~15K caracteres en el Paso 2 (interpretación).

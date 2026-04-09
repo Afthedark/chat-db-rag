@@ -48,12 +48,14 @@ const buildSQLPrompt = async (question, dbDescription) => {
         systemPromptParts.push(rules.EJEMPLO_SQL);
     }
     
-    systemPromptParts.push(`\nREGLAS ESTRICTAS:
-- Responde ÚNICAMENTE con la consulta SQL. 
-- Solo puedes generar comandos SELECT.
-- Si no te piden un número de registros específico, asume un máximo lógico y asegúrate de limitarlo si no rompe la agregación (por defecto la app luego agregará LIMIT 1000 si falta).
-- NUNCA uses INSERT, UPDATE, DELETE, DROP.
-- No uses delimitadores de markdown tipo \`\`\`sql en la respuesta, devuelve solo la cadena SQL.`);
+    systemPromptParts.push(`\nREGLAS ESTRICTAS - OBLIGATORIO:
+- Genera UNA SOLA consulta SQL, nunca múltiples opciones o variantes.
+- Responde ÚNICAMENTE con el código SQL puro, sin markdown, sin backticks, sin explicaciones.
+- NO agregues texto antes o después del SQL (no notas, no comentarios, no ejemplos alternativos).
+- NO uses separadores como --- entre consultas.
+- Solo comandos SELECT, nunca INSERT, UPDATE, DELETE, DROP, ALTER, CREATE.
+- No uses delimitadores de markdown (\`\`\`sql) en la respuesta.
+- La consulta debe terminar con punto y coma (;).`);
 
     return {
         systemPrompt: systemPromptParts.join('\n'),

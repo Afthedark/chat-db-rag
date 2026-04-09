@@ -79,7 +79,6 @@ const handleChat = async (req, res, next) => {
         // ================= PASO 1: Generación de SQL =================
         const { systemPrompt: sqlSystemPrompt, userPrompt: sqlUserPrompt } = await promptBuilder.buildSQLPrompt(question, dbConfig.description);
         
-        // ... (rest of the SQL flow remains the same, but within the controller)
         let rawSQLResponse;
         try {
             rawSQLResponse = await aiService.generateResponse([
@@ -90,10 +89,20 @@ const handleChat = async (req, res, next) => {
             throw new AppError('Hubo un error con la IA generando la consulta.', 500);
         }
 
+        // EXTRAER SOLO EL PRIMER SQL VÁLIDO (ignorar múltiples consultas, texto, etc.)
+        console.log('\n📝 === RESPUESTA COMPLETA DE LA IA ===');
+        console.log(rawSQLResponse);
+        console.log('=====================================\n');
+        
+        const extractedSQL = sqlValidator.extractFirstSQL(rawSQLResponse);
+        console.log('✂️ === SQL EXTRAÍDO ===');
+        console.log(extractedSQL);
+        console.log('======================\n');
+
         // ================= VALIDACIÓN =================
-        const validation = sqlValidator.validate(rawSQLResponse);
+        const validation = sqlValidator.validate(extractedSQL);
         if (!validation.isValid) {
-            const replyMsg = `⚠️ Lo siento, no puedo ejecutar esta acción: ${validation.error}`;
+            const replyMsg = `⚠️ Lo siento, no puedo ejecutar esta acción: ${validation.error}\n\n**SQL Generado por la IA:**\n\`\`\`sql\n${rawSQLResponse}\n\`\`\``;
             await Message.create({
                 chatId: parseInt(currentChatId),
                 role: 'assistant',
@@ -104,7 +113,8 @@ const handleChat = async (req, res, next) => {
                 success: true, 
                 reply: replyMsg,
                 sqlExecuted: rawSQLResponse, 
-                historyId: parseInt(currentChatId) 
+                historyId: parseInt(currentChatId),
+                chartData: null
             });
         }
 

@@ -486,9 +486,15 @@ window.chatApp = function() {
                 const decodedData = JSON.parse(decodeURIComponent(encodedData));
                 this.currentChartData = decodedData;
                 this.chartType = 'bar';
-                this.renderChart();
                 
-                const modal = new bootstrap.Modal(document.getElementById('chartModal'));
+                const modalEl = document.getElementById('chartModal');
+                const modal = new bootstrap.Modal(modalEl);
+                
+                // Escuchar cuando el modal se muestra completamente
+                modalEl.addEventListener('shown.bs.modal', () => {
+                    this.renderChart();
+                }, { once: true });
+                
                 modal.show();
             } catch (error) {
                 console.error('Error abriendo gráfico:', error);
@@ -497,18 +503,31 @@ window.chatApp = function() {
         },
 
         changeChartType(type) {
+            if (this.chartType === type) return; // No hacer nada si es el mismo tipo
+            
             this.chartType = type;
-            this.renderChart();
+            
+            // Usar nextTick para asegurar que el DOM esté actualizado
+            this.$nextTick(() => {
+                this.renderChart();
+            });
         },
 
         renderChart() {
             if (!this.currentChartData || this.currentChartData.length === 0) return;
             
-            const ctx = document.getElementById('chartCanvas').getContext('2d');
+            const canvas = document.getElementById('chartCanvas');
+            if (!canvas) {
+                console.error('Canvas no encontrado');
+                return;
+            }
+            
+            const ctx = canvas.getContext('2d');
             
             // Destruir instancia anterior si existe
             if (this.chartInstance) {
                 this.chartInstance.destroy();
+                this.chartInstance = null;
             }
             
             const data = this.currentChartData;
@@ -519,37 +538,66 @@ window.chatApp = function() {
             const numericKeys = keys.filter(k => isNumeric(data[0][k]));
             const categoricalKeys = keys.filter(k => !isNumeric(data[0][k]));
             
-            // Usar primera columna categórica como labels, o la primera numérica si no hay
+            // Usar primera columna categórica como labels, o la primera columna como fallback
             const labelKey = categoricalKeys.length > 0 ? categoricalKeys[0] : keys[0];
-            const labels = data.map(row => row[labelKey]);
-            
-            // Para pie/doughnut, solo usar la primera columna numérica
-            const datasets = this.chartType === 'pie' || this.chartType === 'doughnut'
-                ? [{
-                    label: numericKeys[0] || 'Valor',
-                    data: data.map(row => parseFloat(row[numericKeys[0]] || 0)),
-                    backgroundColor: this.generateColors(data.length)
-                  }]
-                : numericKeys.map((key, index) => ({
-                    label: key,
-                    data: data.map(row => parseFloat(row[key] || 0)),
-                    backgroundColor: this.getChartColor(index, 0.7),
-                    borderColor: this.getChartColor(index, 1),
-                    borderWidth: 1
-                  }));
+            const labels = data.map(row => String(row[labelKey] || ''));
             
             // Configuración del tema oscuro/claro
             const isDark = this.theme === 'dark';
             const textColor = isDark ? '#ececec' : '#1d1d1f';
             const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
             
-            this.chartInstance = new Chart(ctx, {
-                type: this.chartType,
-                data: {
-                    labels: labels,
-                    datasets: datasets
-                },
-                options: {
+            let datasets;
+            let options;
+            
+            // Configuración específica según tipo de gráfico
+            if (this.chartType === 'pie' || this.chartType === 'doughnut') {
+                // Para pie/doughnut, solo usar la primera columna numérica
+                const firstNumericKey = numericKeys[0] || keys.find(k => isNumeric(data[0][k])) || keys[1];
+                datasets = [{
+                    data: data.map(row => parseFloat(row[firstNumericKey] || 0)),
+                    backgroundColor: this.generateColors(data.length),
+                    borderColor: isDark ? '#1a1a1a' : '#ffffff',
+                    borderWidth: 2
+                }];
+                options = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: textColor }
+                        },
+                        title: {
+                            display: true,
+                            text: `Distribución de ${firstNumericKey} (${data.length} registros)`,
+                            color: textColor
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = labels[context.dataIndex] || '';
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                };
+            } else {
+                // Para bar y line
+                datasets = numericKeys.map((key, index) => ({
+                    label: key,
+                    data: data.map(row => parseFloat(row[key] || 0)),
+                    backgroundColor: this.chartType === 'line' ? this.getChartColor(index, 0.2) : this.getChartColor(index, 0.7),
+                    borderColor: this.getChartColor(index, 1),
+                    borderWidth: 2,
+                    fill: this.chartType === 'line',
+                    tension: this.chartType === 'line' ? 0.3 : 0
+                }));
+                options = {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
@@ -562,20 +610,39 @@ window.chatApp = function() {
                             color: textColor
                         }
                     },
-                    scales: this.chartType === 'pie' || this.chartType === 'doughnut' ? {} : {
+                    scales: {
                         x: {
-                            ticks: { color: textColor },
+                            ticks: { 
+                                color: textColor,
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
                             grid: { color: gridColor }
                         },
                         y: {
                             ticks: { color: textColor },
-                            grid: { color: gridColor }
+                            grid: { color: gridColor },
+                            beginAtZero: true
                         }
                     }
-                }
-            });
+                };
+            }
             
-            this.chartDataInfo = `Mostrando ${data.length} registros con ${numericKeys.length} métricas`;
+            try {
+                this.chartInstance = new Chart(ctx, {
+                    type: this.chartType,
+                    data: {
+                        labels: labels,
+                        datasets: datasets
+                    },
+                    options: options
+                });
+                
+                this.chartDataInfo = `Mostrando ${data.length} registros con ${numericKeys.length} métricas`;
+            } catch (error) {
+                console.error('Error creando gráfico:', error);
+                this.showToast('Error al crear el gráfico', 'error');
+            }
         },
 
         getChartColor(index, alpha) {
@@ -601,12 +668,30 @@ window.chatApp = function() {
         },
 
         downloadChart() {
-            if (!this.chartInstance) return;
+            if (!this.chartInstance) {
+                console.error('No hay instancia de gráfico para descargar');
+                return;
+            }
             
-            const link = document.createElement('a');
-            link.download = `grafico-${new Date().toISOString().split('T')[0]}.png`;
-            link.href = this.chartInstance.toBase64Image();
-            link.click();
+            try {
+                const base64Image = this.chartInstance.toBase64Image();
+                if (!base64Image) {
+                    this.showToast('Error: No se pudo generar la imagen', 'error');
+                    return;
+                }
+                
+                const link = document.createElement('a');
+                link.download = `grafico-${new Date().toISOString().split('T')[0]}.png`;
+                link.href = base64Image;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                this.showToast('Gráfico descargado', 'success');
+            } catch (error) {
+                console.error('Error descargando gráfico:', error);
+                this.showToast('Error al descargar el gráfico', 'error');
+            }
         }
     }
 }

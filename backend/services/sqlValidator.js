@@ -1,3 +1,34 @@
+/**
+ * Extrae el primer SQL válido de una respuesta de IA que puede contener
+ * múltiples consultas, texto explicativo, markdown, etc.
+ */
+const extractFirstSQL = (rawResponse) => {
+    if (!rawResponse || typeof rawResponse !== 'string') {
+        return rawResponse;
+    }
+
+    // 1. Intentar extraer del primer bloque markdown ```sql ... ```
+    const markdownMatch = rawResponse.match(/```sql\s*([\s\S]*?)```/i);
+    if (markdownMatch) {
+        return markdownMatch[1].trim();
+    }
+
+    // 2. Intentar extraer de cualquier bloque markdown ``` ... ```
+    const genericMarkdownMatch = rawResponse.match(/```\s*([\s\S]*?)```/i);
+    if (genericMarkdownMatch) {
+        return genericMarkdownMatch[1].trim();
+    }
+
+    // 3. Buscar primer SELECT hasta el primer ;
+    const selectMatch = rawResponse.match(/(SELECT[\s\S]*?);/i);
+    if (selectMatch) {
+        return selectMatch[1].trim() + ';';
+    }
+
+    // 4. Fallback: retornar original
+    return rawResponse;
+};
+
 const validate = (sql) => {
     if (!sql || typeof sql !== 'string') {
         return { isValid: false, cleanSQL: '', error: 'SQL vacío o inválido.' };
@@ -6,10 +37,26 @@ const validate = (sql) => {
     // 1. Limpieza general
     let cleanSQL = sql.trim();
     
+    // Quitar todo después de separadores comunes (---, ___, Notas)
+    cleanSQL = cleanSQL.split(/\n?\s*---+\s*\n?/)[0]; // Separador ---
+    cleanSQL = cleanSQL.split(/\n?\s*___+\s*\n?/)[0]; // Separador ___
+    cleanSQL = cleanSQL.split(/\*\*Nota:\*\*/i)[0];  // Notas
+    cleanSQL = cleanSQL.split(/Nota:/i)[0];  // Notas sin negrita
+    
     // Quitar markdown backticks si la IA los incluye
     cleanSQL = cleanSQL.replace(/^```sql/i, '');
+    cleanSQL = cleanSQL.replace(/^```/i, '');
     cleanSQL = cleanSQL.replace(/```$/i, '');
+    
+    // Quitar comentarios SQL (-- y /* */)
+    cleanSQL = cleanSQL.replace(/\/\*[\s\S]*?\*\//g, ''); // /* multi-line */
+    cleanSQL = cleanSQL.replace(/--.*$/gm, ''); // -- single line
+    
     cleanSQL = cleanSQL.trim();
+    
+    // Log para debugging
+    console.log('🔍 SQL Validator - Input:', sql.substring(0, 150) + '...');
+    console.log('🔍 SQL Validator - Cleaned:', cleanSQL.substring(0, 150) + '...');
 
     const upperSQL = cleanSQL.toUpperCase();
 
@@ -18,6 +65,7 @@ const validate = (sql) => {
     const startsWithAllowed = allowedStarts.some(cmd => upperSQL.startsWith(cmd));
     
     if (!startsWithAllowed) {
+        console.log('❌ SQL Validator - No empieza con comando permitido');
         return { 
             isValid: false, 
             cleanSQL: '', 
@@ -35,6 +83,7 @@ const validate = (sql) => {
     for (const word of blacklist) {
         const regex = new RegExp(`\\b${word}\\b`, 'i');
         if (regex.test(cleanSQL)) {
+            console.log(`❌ SQL Validator - Palabra prohibida detectada: ${word}`);
             return { 
                 isValid: false, 
                 cleanSQL: '', 
@@ -44,8 +93,12 @@ const validate = (sql) => {
     }
 
     // 4. Anti-inyección de base (múltiples statements)
-    // Buscamos ; seguido de texto activo para evitar "SELECT * FROM X; DELETE FROM Y;"
-    if (/;\s*./i.test(cleanSQL)) {
+    // Detectar ; seguido de otro statement (no solo espacios o comentarios al final)
+    // Remover espacios y punto y coma al final para la verificación
+    const sqlForCheck = cleanSQL.replace(/;\s*$/, '').trim();
+    const remainingAfterSemicolon = sqlForCheck.split(';').slice(1).join(';').trim();
+    if (remainingAfterSemicolon.length > 0) {
+        console.log('❌ SQL Validator - Múltiples sentencias detectadas');
         return {
             isValid: false,
             cleanSQL: '',
@@ -63,10 +116,13 @@ const validate = (sql) => {
     // Normalizar el LIMIT agregado
     cleanSQL = cleanSQL.replace(/;?\s*LIMIT 100\s*$/i, ' LIMIT 100');
     if (!cleanSQL.endsWith(';')) cleanSQL += ';';
+    
+    console.log('✅ SQL Validator - SQL válido');
 
     return { isValid: true, cleanSQL, error: null };
 };
 
 module.exports = {
-    validate
+    validate,
+    extractFirstSQL
 };
