@@ -29,7 +29,18 @@ const buildSQLPrompt = async (question, dbDescription) => {
     }
     
     systemPromptParts.push('\n=== ESTRUCTURA DE LA BASE DE DATOS ===');
-    if (rules.ESTRUCTURA_DB) systemPromptParts.push(rules.ESTRUCTURA_DB);
+    
+    // OPTIMIZACIÓN: Limitar tamaño del esquema para modelos locales
+    const MAX_SCHEMA_LENGTH = 8000; // ~2K tokens aprox
+    if (rules.ESTRUCTURA_DB) {
+        if (rules.ESTRUCTURA_DB.length > MAX_SCHEMA_LENGTH) {
+            systemPromptParts.push(rules.ESTRUCTURA_DB.substring(0, MAX_SCHEMA_LENGTH));
+            systemPromptParts.push('\n[Esquema truncado por tamaño...]');
+        } else {
+            systemPromptParts.push(rules.ESTRUCTURA_DB);
+        }
+    }
+    
     if (dbDescription) systemPromptParts.push(`\nDescripción extra de la BD consultada: ${dbDescription}`);
     
     if (rules.EJEMPLO_SQL) {
@@ -60,10 +71,35 @@ Tu trabajo es escribir una respuesta en lenguaje natural para el usuario, basán
         systemPrompt += `\n\n${rules.PROMPT_NEGOCIO}`;
     }
 
-    // Limit JSON context to prevent context window overflow (safeguard)
-    let jsonString = JSON.stringify(sqlResults);
-    if(jsonString.length > 400000) {
-        jsonString = JSON.stringify(sqlResults.slice(0, 1000)) + '\n... [Resultados truncados por tamaño]';
+    // OPTIMIZACIÓN: Limitar contexto para modelos locales (128K max)
+    // Estrategia: Muestreo inteligente para grandes resultados
+    let processedResults = sqlResults;
+    
+    if (sqlResults.length > 50) {
+        // Para grandes volúmenes: primeros 25, últimos 25, y muestra del medio
+        const first = sqlResults.slice(0, 25);
+        const last = sqlResults.slice(-25);
+        const middleSample = sqlResults.length > 100 
+            ? sqlResults.slice(Math.floor(sqlResults.length/2) - 5, Math.floor(sqlResults.length/2) + 5)
+            : [];
+        
+        processedResults = [
+            ...first,
+            { _note: `... ${sqlResults.length - 50} registros omitidos ...` },
+            ...middleSample,
+            { _note: '... registros finales ...' },
+            ...last
+        ];
+    }
+    
+    let jsonString = JSON.stringify(processedResults);
+    
+    // Límite conservador para modelos locales: ~15K caracteres (~4K tokens)
+    const MAX_CONTEXT_LENGTH = 15000;
+    if (jsonString.length > MAX_CONTEXT_LENGTH) {
+        // Truncar manteniendo estructura válida
+        const truncated = processedResults.slice(0, Math.max(10, Math.floor(processedResults.length / 2)));
+        jsonString = JSON.stringify(truncated) + `\n... [Resultado truncado: ${sqlResults.length} registros totales]`;
     }
 
     const userPrompt = `Pregunta original del usuario: "${question}"

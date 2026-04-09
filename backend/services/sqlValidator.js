@@ -53,15 +53,15 @@ const validate = (sql) => {
         };
     }
 
-    // 5. Garantizar límite de filas (LIMIT) si es un SELECT (opcional pero recomendado)
+    // 5. Garantizar límite de filas (LIMIT) si es un SELECT (optimizado para modelos locales)
+    // Reducido a 100 para evitar sobrecarga de contexto en Paso 2
     if (upperSQL.startsWith('SELECT') && !upperSQL.includes('LIMIT')) {
-        // Un poco arriesgado parsear SQL complejo, pero para casos simples agrega protección
-        cleanSQL += ' LIMIT 1000';
+        cleanSQL += ' LIMIT 100';
     }
 
     // Regresar el SQL validado y limpio
-    // Si la cadena termina en un ; provisto desde un LIMIT inyectado o por la limpieza
-    cleanSQL = cleanSQL.replace(/;?\s*LIMIT 1000/i, ' LIMIT 1000');
+    // Normalizar el LIMIT agregado
+    cleanSQL = cleanSQL.replace(/;?\s*LIMIT 100\s*$/i, ' LIMIT 100');
     if (!cleanSQL.endsWith(';')) cleanSQL += ';';
 
     return { isValid: true, cleanSQL, error: null };

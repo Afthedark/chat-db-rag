@@ -50,11 +50,11 @@ const handleChat = async (req, res, next) => {
         console.log(`🎯 Intención detectada: ${intent.trim()}`);
 
         if (intent.trim().toUpperCase() === 'GENERAL') {
-            // RECUPERAR HISTORIAL PARA CONTEXTO
+            // RECUPERAR HISTORIAL PARA CONTEXTO (optimizado: solo últimos 3 mensajes)
             const history = await Message.findAll({
                 where: { chatId: currentChatId },
                 order: [['createdAt', 'DESC']],
-                limit: 6
+                limit: 3
             });
             
             const { systemPrompt: genSystem, userPrompt: genUser } = await promptBuilder.buildGeneralChatPrompt(question, history.reverse());
