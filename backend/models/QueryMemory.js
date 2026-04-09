@@ -40,6 +40,12 @@ module.exports = (sequelize, DataTypes) => {
     databaseId: {
       type: DataTypes.INTEGER,
       allowNull: false
+    },
+    // NUEVO: Grupo de esquema para compartir ejemplos entre BDs similares
+    schemaGroup: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: 'default'
     }
   }, {
     tableName: 'QueryMemories',

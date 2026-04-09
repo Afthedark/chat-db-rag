@@ -307,10 +307,65 @@ CREATE TABLE DatabaseConnections (
   password VARCHAR(255),
   database VARCHAR(255),
   description TEXT,
+  schemaGroup VARCHAR(255) DEFAULT 'default',  -- Grupo para compartir ejemplos entre BDs similares
   isActive BOOLEAN DEFAULT true,
   createdAt DATETIME,
   updatedAt DATETIME
 );
+
+-- QueryMemories (ejemplos de entrenamiento few-shot)
+CREATE TABLE QueryMemories (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  questionText TEXT,
+  sqlQuery TEXT,
+  databaseId INT,
+  schemaGroup VARCHAR(255) DEFAULT 'default',  -- Grupo del esquema
+  rowsReturned INT,
+  executionTimeMs INT,
+  score FLOAT DEFAULT 1.0,
+  isActive BOOLEAN DEFAULT true,
+  createdAt DATETIME,
+  updatedAt DATETIME
+);
+```
+
+## Sistema de QueryMemory (Few-Shot Learning)
+
+El sistema implementa **aprendizaje continuo** guardando ejemplos de consultas SQL exitosas para mejorar futuras respuestas.
+
+### SchemaGroup - Compartir Ejemplos entre Bases de Datos
+
+El campo `schemaGroup` permite agrupar bases de datos con **estructuras idénticas** para compartir ejemplos de entrenamiento:
+
+```
+Sucursal A (schemaGroup: "sucursales_v1")
+Sucursal B (schemaGroup: "sucursales_v1")  ← Comparten ejemplos
+Sucursal C (schemaGroup: "sucursales_v1")  ← Comparten ejemplos
+Cliente XYZ (schemaGroup: "cliente_xyz")   ← Grupo separado
+```
+
+**Flujo de funcionamiento:**
+1. Usuario guarda ejemplo en "Sucursal A"
+2. Al preguntar en "Sucursal B", el sistema busca ejemplos del grupo "sucursales_v1"
+3. La IA recibe ejemplos relevantes como contexto few-shot
+
+### API QueryMemory (`/api/query-memory`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/?databaseId=1&limit=10` | Lista ejemplos por BD o grupo |
+| POST | `/` | Guarda nuevo ejemplo (con test opcional) |
+| DELETE | `/:id` | Elimina ejemplo |
+| POST | `/generate-sql` | Genera SQL usando ejemplos como contexto |
+
+**Request POST /**:
+```json
+{
+  "questionText": "ventas del mes pasado",
+  "sqlQuery": "SELECT * FROM ventas WHERE fecha >= DATE_SUB(NOW(), INTERVAL 1 MONTH)",
+  "databaseId": 1,
+  "testFirst": true  // Ejecuta SQL antes de guardar
+}
 ```
 
 ## Optimizaciones para LLMs Locales
@@ -324,6 +379,7 @@ El sistema está optimizado para modelos con contexto limitado (128K tokens):
 | Truncamiento de esquema | Máximo 8K caracteres de DDL | `promptBuilder.js:30-42` |
 | Historial reducido | Solo últimos 3 mensajes | `chatController.js:54-58` |
 | Contexto Paso 2 | Máximo ~15K caracteres | `promptBuilder.js:64-82` |
+| Few-shot con QueryMemory | Incluye hasta 3 ejemplos similares | `queryMemoryService.js` |
 
 ## Seguridad
 

@@ -1,4 +1,4 @@
-const { QueryMemory } = require('../models');
+const { QueryMemory, DatabaseConnection } = require('../models');
 const { Op } = require('sequelize');
 
 /**
@@ -28,13 +28,29 @@ const tokenize = (text) => {
 };
 
 /**
- * Encuentra consultas similares en el historial
- * @param {string} question - Pregunta del usuario
+ * Obtiene el schemaGroup de una base de datos
  * @param {number} databaseId - ID de la base de datos
+ * @returns {string} schemaGroup (default: 'default')
+ */
+const getSchemaGroup = async (databaseId) => {
+  try {
+    const db = await DatabaseConnection.findByPk(databaseId);
+    return db?.schemaGroup || 'default';
+  } catch (error) {
+    console.error('❌ Error obteniendo schemaGroup:', error.message);
+    return 'default';
+  }
+};
+
+/**
+ * Encuentra consultas similares en el historial
+ * MODIFICADO: Ahora busca por schemaGroup en lugar de databaseId
+ * @param {string} question - Pregunta del usuario
+ * @param {string} schemaGroup - Grupo de esquema (o databaseId para compatibilidad)
  * @param {number} limit - Máximo de resultados (default: 4)
  * @returns {Array} Consultas similares con campo similarity
  */
-const findSimilarQueries = async (question, databaseId, limit = 4) => {
+const findSimilarQueries = async (question, schemaGroup, limit = 4) => {
   try {
     // Tokenizar la pregunta
     const tokens = tokenize(question);
@@ -50,11 +66,11 @@ const findSimilarQueries = async (question, databaseId, limit = 4) => {
       }
     }));
 
-    // Buscar candidatos
+    // MODIFICADO: Buscar por schemaGroup en lugar de databaseId
     const candidates = await QueryMemory.findAll({
       where: {
         [Op.and]: [
-          { databaseId },
+          { schemaGroup },
           { wasSuccessful: true },
           { score: { [Op.gte]: 0.5 } },
           { [Op.or]: tokenConditions }
@@ -106,14 +122,21 @@ const findSimilarQueries = async (question, databaseId, limit = 4) => {
 
 /**
  * Guarda una consulta exitosa en la memoria
+ * MODIFICADO: Ahora acepta y guarda schemaGroup
  * @param {Object} params
  * @param {string} params.questionText - Pregunta original
  * @param {string} params.sqlQuery - SQL generado
  * @param {number} params.databaseId - ID de la base de datos
+ * @param {string} params.schemaGroup - Grupo de esquema
  * @param {number} params.rowsReturned - Número de filas retornadas
  */
-const saveSuccessfulQuery = async ({ questionText, sqlQuery, databaseId, rowsReturned }) => {
+const saveSuccessfulQuery = async ({ questionText, sqlQuery, databaseId, schemaGroup, rowsReturned }) => {
   try {
+    // Si no se proporciona schemaGroup, obtenerlo de la BD
+    if (!schemaGroup) {
+      schemaGroup = await getSchemaGroup(databaseId);
+    }
+
     // Tokenizar la pregunta
     const questionTokens = tokenize(questionText);
 
@@ -130,11 +153,11 @@ const saveSuccessfulQuery = async ({ questionText, sqlQuery, databaseId, rowsRet
     // Calcular score
     const score = rowsReturned > 0 ? 1.0 : 0.4;
 
-    // Buscar si ya existe
+    // Buscar si ya existe (mismo questionText Y mismo schemaGroup)
     const existing = await QueryMemory.findOne({
       where: {
         questionText,
-        databaseId
+        schemaGroup
       }
     });
 
@@ -146,10 +169,11 @@ const saveSuccessfulQuery = async ({ questionText, sqlQuery, databaseId, rowsRet
         tablesUsed,
         rowsReturned,
         score,
+        databaseId, // Actualizar por si cambió la BD específica
         usageCount: existing.usageCount + 1,
         wasSuccessful: true
       });
-      console.log(`🔄 QueryMemory actualizado: "${questionText.substring(0, 50)}..."`);
+      console.log(`🔄 QueryMemory actualizado: "${questionText.substring(0, 50)}..." [${schemaGroup}]`);
     } else {
       // Crear nuevo registro
       await QueryMemory.create({
@@ -161,9 +185,10 @@ const saveSuccessfulQuery = async ({ questionText, sqlQuery, databaseId, rowsRet
         score,
         usageCount: 1,
         databaseId,
+        schemaGroup,
         wasSuccessful: true
       });
-      console.log(`💾 QueryMemory creado: "${questionText.substring(0, 50)}..."`);
+      console.log(`💾 QueryMemory creado: "${questionText.substring(0, 50)}..." [${schemaGroup}]`);
     }
 
   } catch (error) {
@@ -174,11 +199,18 @@ const saveSuccessfulQuery = async ({ questionText, sqlQuery, databaseId, rowsRet
 
 /**
  * Marca una consulta como fallida
+ * MODIFICADO: Ahora busca por schemaGroup
  * @param {string} questionText - Pregunta que falló
  * @param {number} databaseId - ID de la base de datos
+ * @param {string} schemaGroup - Grupo de esquema (opcional)
  */
-const markQueryFailed = async (questionText, databaseId) => {
+const markQueryFailed = async (questionText, databaseId, schemaGroup) => {
   try {
+    // Si no se proporciona schemaGroup, obtenerlo de la BD
+    if (!schemaGroup) {
+      schemaGroup = await getSchemaGroup(databaseId);
+    }
+
     await QueryMemory.update(
       {
         wasSuccessful: false,
@@ -187,11 +219,11 @@ const markQueryFailed = async (questionText, databaseId) => {
       {
         where: {
           questionText,
-          databaseId
+          schemaGroup
         }
       }
     );
-    console.log(`❌ QueryMemory marcado como fallido: "${questionText.substring(0, 50)}..."`);
+    console.log(`❌ QueryMemory marcado como fallido: "${questionText.substring(0, 50)}..." [${schemaGroup}]`);
   } catch (error) {
     console.error('❌ Error en markQueryFailed:', error.message);
   }
@@ -201,5 +233,7 @@ module.exports = {
   findSimilarQueries,
   saveSuccessfulQuery,
   markQueryFailed,
-  tokenize
+  tokenize,
+  // NUEVO: Exportar getSchemaGroup para uso externo
+  getSchemaGroup
 };

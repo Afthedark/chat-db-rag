@@ -5,7 +5,7 @@ const aiService = require('../services/aiService');
 const sqlValidator = require('../services/sqlValidator');
 const dbManager = require('../services/dbManager');
 // NUEVO: Importar servicio de memoria de consultas
-const { findSimilarQueries, saveSuccessfulQuery, markQueryFailed } = require('../services/queryMemoryService');
+const { findSimilarQueries, saveSuccessfulQuery, markQueryFailed, getSchemaGroup } = require('../services/queryMemoryService');
 
 const handleChat = async (req, res, next) => {
     try {
@@ -80,12 +80,21 @@ const handleChat = async (req, res, next) => {
 
         // ================= PASO 1: Generación de SQL =================
 
-        // NUEVO: Recuperar ejemplos similares de consultas exitosas previas
+        // NUEVO: Obtener schemaGroup de la base de datos para compartir ejemplos entre BDs similares
+        let schemaGroup = 'default';
+        try {
+            schemaGroup = await getSchemaGroup(targetDbId);
+            console.log(`🏷️ SchemaGroup: ${schemaGroup}`);
+        } catch (sgErr) {
+            console.warn('⚠️ No se pudo obtener schemaGroup:', sgErr.message);
+        }
+
+        // NUEVO: Recuperar ejemplos similares de consultas exitosas previas (por schemaGroup)
         let similarQueries = [];
         try {
-            similarQueries = await findSimilarQueries(question, targetDbId);
+            similarQueries = await findSimilarQueries(question, schemaGroup);
             if (similarQueries.length > 0) {
-                console.log(`🧠 Few-shots recuperados: ${similarQueries.length} ejemplos similares`);
+                console.log(`🧠 Few-shots recuperados: ${similarQueries.length} ejemplos similares [${schemaGroup}]`);
             }
         } catch (memErr) {
             console.warn('⚠️ QueryMemory no disponible (tabla aún no creada?):', memErr.message);
@@ -156,23 +165,24 @@ const handleChat = async (req, res, next) => {
             const executed = await dbManager.executeQuery(targetDbId, cleanSQL);
             queryResults = executed.rows;
 
-            // NUEVO: Aprender de esta consulta exitosa
+            // NUEVO: Aprender de esta consulta exitosa (con schemaGroup)
             try {
                 await saveSuccessfulQuery({
                     questionText: question,
                     sqlQuery: cleanSQL,
                     databaseId: targetDbId,
+                    schemaGroup: schemaGroup, // NUEVO: Guardar con el grupo de esquema
                     rowsReturned: queryResults ? queryResults.length : 0
                 });
-                console.log(`💾 Consulta guardada en QueryMemory (${queryResults?.length ?? 0} filas)`);
+                console.log(`💾 Consulta guardada en QueryMemory (${queryResults?.length ?? 0} filas) [${schemaGroup}]`);
             } catch (saveErr) {
                 console.warn('⚠️ No se pudo guardar en QueryMemory:', saveErr.message);
             }
 
         } catch (error) {
-             // NUEVO: Penalizar si esta pregunta tenía un SQL en memoria que volvió a fallar
+             // NUEVO: Penalizar si esta pregunta tenía un SQL en memoria que volvió a fallar (con schemaGroup)
              try {
-                await markQueryFailed(question, targetDbId);
+                await markQueryFailed(question, targetDbId, schemaGroup);
             } catch (_) {}
 
              const errorMsgStatus = `🔥 Ocurrió un error al ejecutar la estructura en la base de datos.`;

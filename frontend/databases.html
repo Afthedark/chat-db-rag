@@ -50,6 +50,11 @@
                             <i class="bi bi-database me-2"></i> Bases de Datos
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="/admin/training" class="nav-link w-100 text-start btn-custom rounded-3">
+                            <i class="bi bi-mortarboard me-2"></i> Entrenar IA
+                        </a>
+                    </li>
                 </ul>
             </nav>
         </aside>
@@ -117,6 +122,12 @@
                                         <div class="col"><strong class="text-secondary opacity-75">Usuario:</strong>
                                             <span class="fst-italic" style="color: var(--c-text-1);"
                                                 x-text="db.user"></span></div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <span class="badge bg-secondary" x-show="db.schemaGroup && db.schemaGroup !== 'default'">
+                                            <i class="bi bi-mortarboard me-1"></i>
+                                            <span x-text="db.schemaGroup"></span>
+                                        </span>
                                     </div>
                                     <p x-show="db.description"
                                         class="text-secondary small mt-3 mb-0 pt-2 border-top border-secondary border-opacity-25">
@@ -236,6 +247,22 @@
                                             style="background: var(--bg-darker); color: var(--c-text-1);" rows="2"
                                             x-model="dbForm.description"
                                             placeholder="Ayuda a la IA a entender qué datos encontrará aquí (ej: Tablas de inventario y pedidos)."></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label text-secondary fw-bold small opacity-75">
+                                            Grupo de Esquema (Schema Group)
+                                            <i class="bi bi-question-circle text-info ms-1" 
+                                               data-bs-toggle="tooltip" 
+                                               title="Bases de datos del mismo grupo comparten ejemplos de entrenamiento. Útil para sucursales con esquemas idénticos."></i>
+                                        </label>
+                                        <input type="text" 
+                                            class="form-control border-secondary no-ring font-monospace"
+                                            style="background: var(--bg-darker); color: var(--c-text-1);"
+                                            x-model="dbForm.schemaGroup"
+                                            placeholder="default">
+                                        <div class="form-text text-secondary small">
+                                            Ej: sucursales_v1, cliente_xyz, default
+                                        </div>
                                     </div>
                                 </div>
                             </div>
