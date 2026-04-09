@@ -18,10 +18,14 @@ window.rulesApp = function() {
         ruleForm: {
             id: null,
             key: '',
-            category: 'PROMPT_SISTEMA',
+            category: 'ESTRUCTURA_DB',
             content: '',
             isActive: true
         },
+        
+        // --- SIMPLE CATEGORY (2 options) ---
+        simpleCategoryType: 'ESQUEMA', // 'ESQUEMA' or 'INSTRUCCIONES'
+        
         theme: 'dark',
 
         async init() {
@@ -52,14 +56,95 @@ window.rulesApp = function() {
 
         filteredRules() {
             if (!this.categoryFilter) return this.rules;
+            // Mapeo de filtros simples a categorías del backend
+            if (this.categoryFilter === 'ESQUEMA') {
+                return this.rules.filter(r => r.category === 'ESTRUCTURA_DB');
+            }
+            if (this.categoryFilter === 'INSTRUCCIONES') {
+                return this.rules.filter(r => ['PROMPT_SISTEMA', 'EJEMPLO_SQL', 'PROMPT_NEGOCIO'].includes(r.category));
+            }
             return this.rules.filter(r => r.category === this.categoryFilter);
         },
 
         openRuleModal() {
             this.isEditingRule = false;
-            this.ruleForm = { id: null, key: '', category: 'PROMPT_SISTEMA', content: '', isActive: true };
+            this.simpleCategoryType = 'ESQUEMA';
+            this.ruleForm = { id: null, key: '', category: 'ESTRUCTURA_DB', content: '', isActive: true };
             const m = new bootstrap.Modal(document.getElementById('ruleModal'));
             m.show();
+        },
+
+        updateCategoryFromSimpleType() {
+            // Mapea el tipo simple a la categoría del backend
+            if (this.simpleCategoryType === 'ESQUEMA') {
+                this.ruleForm.category = 'ESTRUCTURA_DB';
+            } else {
+                this.ruleForm.category = 'PROMPT_SISTEMA';
+            }
+        },
+
+        getSimpleCategoryLabel(backendCategory) {
+            // Mapea categorías del backend a etiqueta simple
+            if (backendCategory === 'ESTRUCTURA_DB') return 'Esquema';
+            if (['PROMPT_SISTEMA', 'EJEMPLO_SQL', 'PROMPT_NEGOCIO'].includes(backendCategory)) {
+                return 'Instrucciones';
+            }
+            return backendCategory;
+        },
+
+        getSimpleCategoryBadgeClass(backendCategory) {
+            // Mapea a clases de badge simplificadas
+            if (backendCategory === 'ESTRUCTURA_DB') {
+                return 'badge rounded-pill shadow-sm bg-primary';
+            }
+            if (['PROMPT_SISTEMA', 'EJEMPLO_SQL', 'PROMPT_NEGOCIO'].includes(backendCategory)) {
+                return 'badge rounded-pill shadow-sm bg-success';
+            }
+            return 'badge rounded-pill shadow-sm bg-secondary';
+        },
+
+        getContentLabel() {
+            // Label dinámico según tipo seleccionado
+            if (this.isEditingRule) {
+                return this.getSimpleCategoryLabel(this.ruleForm.category) === 'Esquema' 
+                    ? 'DDL / Esquema SQL' 
+                    : 'Instrucciones / Prompts / Ejemplos';
+            }
+            return this.simpleCategoryType === 'ESQUEMA' 
+                ? 'DDL / Esquema SQL' 
+                : 'Instrucciones / Prompts / Ejemplos';
+        },
+
+        getContentPlaceholder() {
+            // Placeholder dinámico según tipo seleccionado
+            if (this.isEditingRule) {
+                return this.getSimpleCategoryLabel(this.ruleForm.category) === 'Esquema'
+                    ? `-- Define aquí las tablas, columnas y relaciones
+CREATE TABLE clientes (
+  id INT PRIMARY KEY,
+  nombre VARCHAR(100),
+  email VARCHAR(100) UNIQUE
+);`
+                    : `-- Prompt del sistema, ejemplos few-shot o instrucciones de formato
+Eres un analista de ventas. Cuando pregunten por totales, siempre incluye el período de tiempo.
+
+Ejemplo:
+Pregunta: ¿Cuántas ventas hubo hoy?
+SQL: SELECT COUNT(*) FROM ventas WHERE DATE(fecha) = CURDATE();`;
+            }
+            return this.simpleCategoryType === 'ESQUEMA'
+                ? `-- Define aquí las tablas, columnas y relaciones
+CREATE TABLE clientes (
+  id INT PRIMARY KEY,
+  nombre VARCHAR(100),
+  email VARCHAR(100) UNIQUE
+);`
+                : `-- Prompt del sistema, ejemplos few-shot o instrucciones de formato
+Eres un analista de ventas. Cuando pregunten por totales, siempre incluye el período de tiempo.
+
+Ejemplo:
+Pregunta: ¿Cuántas ventas hubo hoy?
+SQL: SELECT COUNT(*) FROM ventas WHERE DATE(fecha) = CURDATE();`;
         },
 
         editRule(rule) {
