@@ -17,7 +17,27 @@ const fetchActiveRules = async (categories) => {
     return grouped;
 };
 
-const buildSQLPrompt = async (question, dbDescription) => {
+// NUEVO: Construye la sección de few-shot a partir de consultas similares
+const buildFewShotSection = (similarQueries) => {
+    if (!similarQueries || similarQueries.length === 0) {
+        return '';
+    }
+
+    // Tomar máximo 3 ejemplos
+    const examples = similarQueries.slice(0, 3);
+
+    const sections = examples.map((query, index) => {
+        const similarityPct = Math.round((query.similarity || 0) * 100);
+        return `-- Ejemplo ${index + 1} (similitud: ${similarityPct}%, usado ${query.usageCount || 1} veces)
+-- Pregunta: "${query.questionText}"
+${query.sqlQuery}`;
+    });
+
+    return `\n\n### Consultas anteriores exitosas para esta base de datos (úsalas como guía de estilo y estructura):\n${sections.join('\n\n')}`;
+};
+
+// MODIFICADO: Acepta tercer parámetro similarQueries
+const buildSQLPrompt = async (question, dbDescription, similarQueries = []) => {
     const rules = await fetchActiveRules(['PROMPT_SISTEMA', 'ESTRUCTURA_DB', 'EJEMPLO_SQL']);
     
     const systemPromptParts = [];
@@ -56,6 +76,12 @@ const buildSQLPrompt = async (question, dbDescription) => {
 - Solo comandos SELECT, nunca INSERT, UPDATE, DELETE, DROP, ALTER, CREATE.
 - No uses delimitadores de markdown (\`\`\`sql) en la respuesta.
 - La consulta debe terminar con punto y coma (;).`);
+
+    // NUEVO: Agregar sección de few-shot dinámica
+    const fewShotSection = buildFewShotSection(similarQueries);
+    if (fewShotSection) {
+        systemPromptParts.push(fewShotSection);
+    }
 
     return {
         systemPrompt: systemPromptParts.join('\n'),

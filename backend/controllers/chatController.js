@@ -4,6 +4,8 @@ const promptBuilder = require('../services/promptBuilder');
 const aiService = require('../services/aiService');
 const sqlValidator = require('../services/sqlValidator');
 const dbManager = require('../services/dbManager');
+// NUEVO: Importar servicio de memoria de consultas
+const { findSimilarQueries, saveSuccessfulQuery, markQueryFailed } = require('../services/queryMemoryService');
 
 const handleChat = async (req, res, next) => {
     try {
@@ -77,7 +79,35 @@ const handleChat = async (req, res, next) => {
         }
 
         // ================= PASO 1: Generación de SQL =================
-        const { systemPrompt: sqlSystemPrompt, userPrompt: sqlUserPrompt } = await promptBuilder.buildSQLPrompt(question, dbConfig.description);
+
+        // NUEVO: Recuperar ejemplos similares de consultas exitosas previas
+        let similarQueries = [];
+        try {
+            similarQueries = await findSimilarQueries(question, targetDbId);
+            if (similarQueries.length > 0) {
+                console.log(`🧠 Few-shots recuperados: ${similarQueries.length} ejemplos similares`);
+            }
+        } catch (memErr) {
+            console.warn('⚠️ QueryMemory no disponible (tabla aún no creada?):', memErr.message);
+        }
+
+        // NUEVO: Intentar enriquecer el esquema con DDL dinámico
+        let dynamicSchema = '';
+        try {
+            dynamicSchema = await dbManager.extractSchemaForPrompt(targetDbId);
+            if (dynamicSchema) {
+                console.log(`📋 Esquema dinámico extraído: ${dynamicSchema.length} caracteres`);
+            }
+        } catch (schemaErr) {
+            console.warn('⚠️ No se pudo extraer DDL dinámico:', schemaErr.message);
+        }
+
+        // MODIFICADO: Pasar similarQueries al builder
+        const { systemPrompt: sqlSystemPrompt, userPrompt: sqlUserPrompt } = await promptBuilder.buildSQLPrompt(
+            question,
+            dynamicSchema || dbConfig.description,
+            similarQueries
+        );
         
         let rawSQLResponse;
         try {
@@ -125,7 +155,26 @@ const handleChat = async (req, res, next) => {
         try {
             const executed = await dbManager.executeQuery(targetDbId, cleanSQL);
             queryResults = executed.rows;
+
+            // NUEVO: Aprender de esta consulta exitosa
+            try {
+                await saveSuccessfulQuery({
+                    questionText: question,
+                    sqlQuery: cleanSQL,
+                    databaseId: targetDbId,
+                    rowsReturned: queryResults ? queryResults.length : 0
+                });
+                console.log(`💾 Consulta guardada en QueryMemory (${queryResults?.length ?? 0} filas)`);
+            } catch (saveErr) {
+                console.warn('⚠️ No se pudo guardar en QueryMemory:', saveErr.message);
+            }
+
         } catch (error) {
+             // NUEVO: Penalizar si esta pregunta tenía un SQL en memoria que volvió a fallar
+             try {
+                await markQueryFailed(question, targetDbId);
+            } catch (_) {}
+
              const errorMsgStatus = `🔥 Ocurrió un error al ejecutar la estructura en la base de datos.`;
              await Message.create({
                 chatId: parseInt(currentChatId),
