@@ -158,7 +158,8 @@ const handleChat = async (req, res, next) => {
             success: true,
             reply: finalReply,
             sqlExecuted: cleanSQL,
-            historyId: parseInt(currentChatId)
+            historyId: parseInt(currentChatId),
+            chartData: queryResults  // Datos para visualización en gráficos
         });
 
     } catch (error) {

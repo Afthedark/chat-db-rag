@@ -15,6 +15,12 @@ window.chatApp = function() {
         question: '',
         selectedDatabaseId: '',
         systemInfo: { aiProvider: '...', model: '...' },
+        
+        // --- CHART STATE ---
+        chartInstance: null,
+        chartType: 'bar',
+        currentChartData: null,
+        chartDataInfo: '',
 
         async init() {
             console.log('🚀 Chat RAG Model Initialized (Deep Chat Integration)');
@@ -243,6 +249,20 @@ window.chatApp = function() {
                     
                     if (res.data.sqlExecuted) {
                         let htmlContent = this.formatMessage(res.data.reply);
+                        
+                        // Botón de Generar Gráfico (solo si hay datos)
+                        if (res.data.chartData && res.data.chartData.length > 0) {
+                            const chartDataEncoded = encodeURIComponent(JSON.stringify(res.data.chartData));
+                            htmlContent += `
+                                <div class="mt-2 mb-2">
+                                    <button onclick="window.openChartModal('${chartDataEncoded}')" 
+                                        class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-bar-chart-line me-1"></i> Generar Gráfico
+                                    </button>
+                                    <span class="text-secondary small ms-2">(${res.data.chartData.length} registros)</span>
+                                </div>`;
+                        }
+                        
                         htmlContent += `
                             <div class="mt-3">
                                 <details class="sql-details rounded-3 border border-secondary border-opacity-50 overflow-hidden" style="background: rgba(0,0,0,0.3)">
@@ -457,6 +477,146 @@ window.chatApp = function() {
 
         showToast(message, icon = 'info') {
             UIUtils.showToast(message, icon);
+        },
+
+        // --- CHART FUNCTIONS ---
+        
+        openChartModal(encodedData) {
+            try {
+                const decodedData = JSON.parse(decodeURIComponent(encodedData));
+                this.currentChartData = decodedData;
+                this.chartType = 'bar';
+                this.renderChart();
+                
+                const modal = new bootstrap.Modal(document.getElementById('chartModal'));
+                modal.show();
+            } catch (error) {
+                console.error('Error abriendo gráfico:', error);
+                this.showToast('Error al procesar datos para el gráfico', 'error');
+            }
+        },
+
+        changeChartType(type) {
+            this.chartType = type;
+            this.renderChart();
+        },
+
+        renderChart() {
+            if (!this.currentChartData || this.currentChartData.length === 0) return;
+            
+            const ctx = document.getElementById('chartCanvas').getContext('2d');
+            
+            // Destruir instancia anterior si existe
+            if (this.chartInstance) {
+                this.chartInstance.destroy();
+            }
+            
+            const data = this.currentChartData;
+            const keys = Object.keys(data[0]);
+            
+            // Detectar columnas numéricas y categóricas
+            const isNumeric = (val) => !isNaN(parseFloat(val)) && isFinite(val);
+            const numericKeys = keys.filter(k => isNumeric(data[0][k]));
+            const categoricalKeys = keys.filter(k => !isNumeric(data[0][k]));
+            
+            // Usar primera columna categórica como labels, o la primera numérica si no hay
+            const labelKey = categoricalKeys.length > 0 ? categoricalKeys[0] : keys[0];
+            const labels = data.map(row => row[labelKey]);
+            
+            // Para pie/doughnut, solo usar la primera columna numérica
+            const datasets = this.chartType === 'pie' || this.chartType === 'doughnut'
+                ? [{
+                    label: numericKeys[0] || 'Valor',
+                    data: data.map(row => parseFloat(row[numericKeys[0]] || 0)),
+                    backgroundColor: this.generateColors(data.length)
+                  }]
+                : numericKeys.map((key, index) => ({
+                    label: key,
+                    data: data.map(row => parseFloat(row[key] || 0)),
+                    backgroundColor: this.getChartColor(index, 0.7),
+                    borderColor: this.getChartColor(index, 1),
+                    borderWidth: 1
+                  }));
+            
+            // Configuración del tema oscuro/claro
+            const isDark = this.theme === 'dark';
+            const textColor = isDark ? '#ececec' : '#1d1d1f';
+            const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+            
+            this.chartInstance = new Chart(ctx, {
+                type: this.chartType,
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: textColor }
+                        },
+                        title: {
+                            display: true,
+                            text: `Visualización de ${data.length} registros`,
+                            color: textColor
+                        }
+                    },
+                    scales: this.chartType === 'pie' || this.chartType === 'doughnut' ? {} : {
+                        x: {
+                            ticks: { color: textColor },
+                            grid: { color: gridColor }
+                        },
+                        y: {
+                            ticks: { color: textColor },
+                            grid: { color: gridColor }
+                        }
+                    }
+                }
+            });
+            
+            this.chartDataInfo = `Mostrando ${data.length} registros con ${numericKeys.length} métricas`;
+        },
+
+        getChartColor(index, alpha) {
+            const colors = [
+                `rgba(59, 130, 246, ${alpha})`,   // Blue
+                `rgba(16, 185, 129, ${alpha})`,   // Green
+                `rgba(245, 158, 11, ${alpha})`,   // Yellow
+                `rgba(239, 68, 68, ${alpha})`,    // Red
+                `rgba(139, 92, 246, ${alpha})`,   // Purple
+                `rgba(236, 72, 153, ${alpha})`,   // Pink
+                `rgba(6, 182, 212, ${alpha})`,    // Cyan
+                `rgba(249, 115, 22, ${alpha})`    // Orange
+            ];
+            return colors[index % colors.length];
+        },
+
+        generateColors(count) {
+            const colors = [];
+            for (let i = 0; i < count; i++) {
+                colors.push(this.getChartColor(i, 0.7));
+            }
+            return colors;
+        },
+
+        downloadChart() {
+            if (!this.chartInstance) return;
+            
+            const link = document.createElement('a');
+            link.download = `grafico-${new Date().toISOString().split('T')[0]}.png`;
+            link.href = this.chartInstance.toBase64Image();
+            link.click();
         }
     }
 }
+
+// Global function for chart modal (called from HTML)
+window.openChartModal = function(encodedData) {
+    // Get the Alpine.js instance and call the method
+    const chatEl = document.querySelector('[x-data="chatApp()"]');
+    if (chatEl && chatEl._x_dataStack) {
+        const app = chatEl._x_dataStack[0];
+        app.openChartModal(encodedData);
+    }
+};
