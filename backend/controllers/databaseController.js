@@ -23,14 +23,14 @@ const getAll = async (req, res, next) => {
 
 const create = async (req, res, next) => {
     try {
-        const { name, host, port, user, password, database, description, schemaGroup, isActive } = req.body;
+        const { name, host, port, user, password, database, description, isActive } = req.body;
 
         if (!name || !host || !user || !database) {
             throw new AppError('Nombre, host, usuario y base de datos son requeridos.', 400);
         }
 
         const newDb = await DatabaseConnection.create({ 
-            name, host, port, user, password, database, description, schemaGroup, isActive 
+            name, host, port, user, password, database, description, isActive 
         });
 
         const safeData = newDb.toJSON();
@@ -48,14 +48,14 @@ const create = async (req, res, next) => {
 
 const update = async (req, res, next) => {
     try {
-        const { name, host, port, user, password, database, description, schemaGroup, isActive } = req.body;
+        const { name, host, port, user, password, database, description, isActive } = req.body;
         const dbConfig = await DatabaseConnection.findByPk(req.params.id);
 
         if (!dbConfig) {
             throw new AppError('Conexión de Base de datos no encontrada', 404);
         }
 
-        const updateData = { name, host, port, user, database, description, schemaGroup, isActive };
+        const updateData = { name, host, port, user, database, description, isActive };
         // Only update the password if a new one is provided and not the masked version
         if (password && password !== '********') {
             updateData.password = password;

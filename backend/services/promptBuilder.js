@@ -17,71 +17,43 @@ const fetchActiveRules = async (categories) => {
     return grouped;
 };
 
-// NUEVO: Construye la sección de few-shot a partir de consultas similares
-const buildFewShotSection = (similarQueries) => {
-    if (!similarQueries || similarQueries.length === 0) {
-        return '';
-    }
-
-    // Tomar máximo 3 ejemplos
-    const examples = similarQueries.slice(0, 3);
-
-    const sections = examples.map((query, index) => {
-        const similarityPct = Math.round((query.similarity || 0) * 100);
-        return `-- Ejemplo ${index + 1} (similitud: ${similarityPct}%, usado ${query.usageCount || 1} veces)
--- Pregunta: "${query.questionText}"
-${query.sqlQuery}`;
-    });
-
-    return `\n\n### Consultas anteriores exitosas para esta base de datos (úsalas como guía de estilo y estructura):\n${sections.join('\n\n')}`;
-};
-
-// MODIFICADO: Acepta tercer parámetro similarQueries
-const buildSQLPrompt = async (question, dbDescription, similarQueries = []) => {
-    const rules = await fetchActiveRules(['PROMPT_SISTEMA', 'ESTRUCTURA_DB', 'EJEMPLO_SQL']);
+const buildSQLPrompt = async (question, dbDescription) => {
+    const rules = await fetchActiveRules(['INSTRUCCIONES', 'EJEMPLOS_SQL']);
     
     const systemPromptParts = [];
     
-    if (rules.PROMPT_SISTEMA) {
-        systemPromptParts.push(rules.PROMPT_SISTEMA);
+    if (rules.INSTRUCCIONES) {
+        systemPromptParts.push(rules.INSTRUCCIONES);
     } else {
-        systemPromptParts.push("Eres un asistente experto en MySQL. Tu trabajo es interpretar la pregunta y generar UNA SOLA consulta SQL de tipo SELECT para extraer la información. No agregues explicaciones adicionales.");
+        systemPromptParts.push(`Eres un experto en MySQL y analista de datos. Tu tarea principal es convertir requerimientos y preguntas hechas en lenguaje natural a consultas SQL válidas.
+
+REGLAS DE SEGURIDAD:
+- Solo puedes generar sentencias de tipo SELECT o SHOW
+- NUNCA uses INSERT, UPDATE, DELETE, DROP o cualquier comando que modifique datos
+- No uses funciones de archivo como LOAD_FILE
+
+FORMATO DE RESPUESTA:
+- Responde ÚNICAMENTE con la consulta SQL requerida
+- Sin explicaciones adicionales
+- NO uses bloques de markdown
+- Devuelve solo la cadena SQL pura lista para ejecutarse`);
     }
     
     systemPromptParts.push('\n=== ESTRUCTURA DE LA BASE DE DATOS ===');
+    if (dbDescription) systemPromptParts.push(dbDescription);
     
-    // OPTIMIZACIÓN: Limitar tamaño del esquema para modelos locales
-    const MAX_SCHEMA_LENGTH = 8000; // ~2K tokens aprox
-    if (rules.ESTRUCTURA_DB) {
-        if (rules.ESTRUCTURA_DB.length > MAX_SCHEMA_LENGTH) {
-            systemPromptParts.push(rules.ESTRUCTURA_DB.substring(0, MAX_SCHEMA_LENGTH));
-            systemPromptParts.push('\n[Esquema truncado por tamaño...]');
-        } else {
-            systemPromptParts.push(rules.ESTRUCTURA_DB);
-        }
+    if (rules.EJEMPLOS_SQL) {
+        systemPromptParts.push('\n=== EJEMPLOS DE CONSULTAS (APRENDE DE ESTOS PATRONES) ===');
+        systemPromptParts.push(rules.EJEMPLOS_SQL);
+        systemPromptParts.push('\n=== FIN EJEMPLOS ===');
     }
     
-    if (dbDescription) systemPromptParts.push(`\nDescripción extra de la BD consultada: ${dbDescription}`);
-    
-    if (rules.EJEMPLO_SQL) {
-        systemPromptParts.push('\n=== EJEMPLOS DE CONSULTAS ===');
-        systemPromptParts.push(rules.EJEMPLO_SQL);
-    }
-    
-    systemPromptParts.push(`\nREGLAS ESTRICTAS - OBLIGATORIO:
-- Genera UNA SOLA consulta SQL, nunca múltiples opciones o variantes.
-- Responde ÚNICAMENTE con el código SQL puro, sin markdown, sin backticks, sin explicaciones.
-- NO agregues texto antes o después del SQL (no notas, no comentarios, no ejemplos alternativos).
-- NO uses separadores como --- entre consultas.
-- Solo comandos SELECT, nunca INSERT, UPDATE, DELETE, DROP, ALTER, CREATE.
-- No uses delimitadores de markdown (\`\`\`sql) en la respuesta.
-- La consulta debe terminar con punto y coma (;).`);
-
-    // NUEVO: Agregar sección de few-shot dinámica
-    const fewShotSection = buildFewShotSection(similarQueries);
-    if (fewShotSection) {
-        systemPromptParts.push(fewShotSection);
-    }
+    systemPromptParts.push(`\nREGLAS ESTRICTAS:
+- Responde ÚNICAMENTE con la consulta SQL. 
+- Solo puedes generar comandos SELECT.
+- Si no te piden un número de registros específico, asume un máximo lógico y asegúrate de limitarlo si no rompe la agregación (por defecto la app luego agregará LIMIT 1000 si falta).
+- NUNCA uses INSERT, UPDATE, DELETE, DROP.
+- No uses delimitadores de markdown tipo \`\`\`sql en la respuesta, devuelve solo la cadena SQL.`);
 
     return {
         systemPrompt: systemPromptParts.join('\n'),
@@ -90,44 +62,18 @@ const buildSQLPrompt = async (question, dbDescription, similarQueries = []) => {
 };
 
 const buildBusinessPrompt = async (question, sqlResults, sqlQuery) => {
-    const rules = await fetchActiveRules(['PROMPT_NEGOCIO']);
-    
     let systemPrompt = `Eres un analista de datos empresarial y experto en interpretar bases de datos. 
-Tu trabajo es escribir una respuesta en lenguaje natural para el usuario, basándote en los resultados directos que se obtuvieron de ejecutar su consulta en SQL.`;
+Tu trabajo es escribir una respuesta en lenguaje natural para el usuario, basándote en los resultados directos que se obtuvieron de ejecutar su consulta en SQL.
 
-    if (rules.PROMPT_NEGOCIO) {
-        systemPrompt += `\n\n${rules.PROMPT_NEGOCIO}`;
-    }
+INSTRUCCIONES:
+- Interpreta los datos de forma clara, amigable y muy concisa
+- Utiliza formato de listas o tablas markdown siempre que ayude a estructurar la información cuando haya más de 2 registros devueltos
+- Si hay tendencias o anomalías en la data provista, resáltalas`;
 
-    // OPTIMIZACIÓN: Limitar contexto para modelos locales (128K max)
-    // Estrategia: Muestreo inteligente para grandes resultados
-    let processedResults = sqlResults;
-    
-    if (sqlResults.length > 50) {
-        // Para grandes volúmenes: primeros 25, últimos 25, y muestra del medio
-        const first = sqlResults.slice(0, 25);
-        const last = sqlResults.slice(-25);
-        const middleSample = sqlResults.length > 100 
-            ? sqlResults.slice(Math.floor(sqlResults.length/2) - 5, Math.floor(sqlResults.length/2) + 5)
-            : [];
-        
-        processedResults = [
-            ...first,
-            { _note: `... ${sqlResults.length - 50} registros omitidos ...` },
-            ...middleSample,
-            { _note: '... registros finales ...' },
-            ...last
-        ];
-    }
-    
-    let jsonString = JSON.stringify(processedResults);
-    
-    // Límite conservador para modelos locales: ~15K caracteres (~4K tokens)
-    const MAX_CONTEXT_LENGTH = 15000;
-    if (jsonString.length > MAX_CONTEXT_LENGTH) {
-        // Truncar manteniendo estructura válida
-        const truncated = processedResults.slice(0, Math.max(10, Math.floor(processedResults.length / 2)));
-        jsonString = JSON.stringify(truncated) + `\n... [Resultado truncado: ${sqlResults.length} registros totales]`;
+    // Limit JSON context to prevent context window overflow (safeguard)
+    let jsonString = JSON.stringify(sqlResults);
+    if(jsonString.length > 400000) {
+        jsonString = JSON.stringify(sqlResults.slice(0, 1000)) + '\n... [Resultados truncados por tamaño]';
     }
 
     const userPrompt = `Pregunta original del usuario: "${question}"

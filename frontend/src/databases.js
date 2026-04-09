@@ -24,7 +24,6 @@ window.databasesApp = function() {
             password: '',
             database: '',
             description: '',
-            schemaGroup: 'default',
             isActive: true
         },
         theme: 'dark',
@@ -57,7 +56,7 @@ window.databasesApp = function() {
 
         openDbModal() {
             this.isEditingDb = false;
-            this.dbForm = { id: null, name: '', host: '', port: 3306, user: '', password: '', database: '', description: '', schemaGroup: 'default', isActive: true };
+            this.dbForm = { id: null, name: '', host: '', port: 3306, user: '', password: '', database: '', description: '', isActive: true };
             const m = new bootstrap.Modal(document.getElementById('dbModal'));
             m.show();
         },

@@ -7,7 +7,10 @@ module.exports = (sequelize, DataTypes) => {
         },
         category: { 
             type: DataTypes.STRING, 
-            allowNull: false // e.g. PROMPT_SISTEMA, ESTRUCTURA_DB, EJEMPLO_SQL, PROMPT_NEGOCIO
+            allowNull: false, // INSTRUCCIONES (prompts de sistema, reglas) o EJEMPLOS_SQL (ejemplos few-shot)
+            validate: {
+                isIn: [['INSTRUCCIONES', 'EJEMPLOS_SQL']]
+            }
         }, 
         content: { 
             type: DataTypes.TEXT, 

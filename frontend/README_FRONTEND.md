@@ -11,14 +11,12 @@ Interfaz de usuario del sistema RAG de dos pasos. Arquitectura MPA (Multi-Page A
 ├── index.html          # Página principal del Chat RAG (Deep Chat)
 ├── rules.html          # Panel de administración de Reglas IA
 ├── databases.html      # Panel de administración de Conexiones SQL
-├── training.html       # Centro de Entrenamiento (QueryMemory few-shot)
 ├── style.css           # Sistema de diseño global (Design System)
 ├── deepchat.md         # Referencia técnica del componente Deep Chat
 └── /src
     ├── chat.js         # Controlador Alpine.js del chat
     ├── rules.js        # Controlador Alpine.js de reglas
     ├── databases.js    # Controlador Alpine.js de bases de datos
-    ├── training.js     # Controlador Alpine.js del centro de entrenamiento
     └── utils.js        # ⭐ Utilidades globales (temas, toasts, modales)
 ```
 
@@ -168,48 +166,9 @@ initTheme() {
 
 ---
 
-## 📄 Páginas Admin
+## 📄 Páginas Admin (`rules.html` / `databases.html`)
 
-### `rules.html` - Reglas de Contexto RAG
-
-Gestiona prompts del sistema y esquemas de base de datos que se inyectan en el contexto de la IA.
-
-**Categorías:**
-- `ESTRUCTURA_DB`: Esquemas DDL de tablas
-- `PROMPT_SISTEMA`: Prompts base del asistente
-
-### `databases.html` - Conexiones SQL
-
-Administra conexiones a bases de datos objetivo con soporte para **SchemaGroup**:
-
-```javascript
-// Campo schemaGroup en el formulario
-schemaGroup: 'sucursales_v1'  // Agrupa BDs con estructuras idénticas
-```
-
-**Visualización:**
-- Badge en cada tarjeta de BD mostrando su grupo
-- Campo editable en el modal de creación/edición
-
-### `training.html` - Centro de Entrenamiento
-
-Interfaz para curar ejemplos de **QueryMemory** (few-shot learning):
-
-**Funcionalidades:**
-- Selector de base de datos con indicador de SchemaGroup
-- Editor SQL con resaltado de sintaxis (PrismJS)
-- Test de consulta antes de guardar
-- Tabla de ejemplos guardados con score de calidad
-- Eliminación de ejemplos
-
-**Flujo:**
-1. Seleccionar base de datos → Muestra grupo (ej: "sucursales_v1")
-2. Escribir descripción natural (ej: "ventas del último mes")
-3. Escribir SQL correspondiente
-4. Testear SQL (opcional)
-5. Guardar ejemplo → Disponible para todas las BDs del mismo grupo
-
-### Patrón para nuevas páginas admin
+Ambas páginas son **independientes** del chat y cargan sus propios controladores Alpine.js. Al agregar una nueva sección admin, seguir este patrón:
 
 1. Crear `mi-seccion.html` con la estructura de sidebar y main panel.
 2. Crear `src/mi-seccion.js` con `window.miSeccionApp = function() { return {...} }`.

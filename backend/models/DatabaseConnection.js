@@ -32,12 +32,6 @@ module.exports = (sequelize, DataTypes) => {
         description: {
             type: DataTypes.TEXT,
             allowNull: true
-        },
-        // NUEVO: Grupo de esquema para compartir ejemplos entre BDs similares
-        schemaGroup: {
-            type: DataTypes.STRING,
-            allowNull: true,
-            defaultValue: 'default'
         }
     });
 

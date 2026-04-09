@@ -9,8 +9,6 @@ const { errorHandler } = require('./middleware/errorHandler');
 const chatRoutes = require('./routes/chatRoutes');
 const rulesRoutes = require('./routes/rulesRoutes');
 const databaseRoutes = require('./routes/databaseRoutes');
-// NUEVO: Importar rutas de QueryMemory
-const queryMemoryRoutes = require('./routes/queryMemoryRoutes');
 
 const app = express();
 
@@ -21,8 +19,6 @@ app.use(express.json());
 app.use('/api/chat', chatRoutes);
 app.use('/api/rules', rulesRoutes);
 app.use('/api/databases', databaseRoutes);
-// NUEVO: Registrar rutas de QueryMemory
-app.use('/api/query-memory', queryMemoryRoutes);
 
 // Frontend static serving
 app.use(express.static(path.join(__dirname, '../frontend')));
@@ -34,11 +30,6 @@ app.get('/admin/rules', (req, res) => {
 
 app.get('/admin/databases', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/databases.html'));
-});
-
-// NUEVO: Ruta para Centro de Entrenamiento
-app.get('/admin/training', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/training.html'));
 });
 
 app.get('/api/system/info', (req, res) => {
@@ -56,7 +47,7 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
-sequelize.sync()
+sequelize.sync({ alter: true })
     .then(() => {
         console.log('📦 Base de datos de memoria sincronizada exitosamente.');
         app.listen(PORT, () => {

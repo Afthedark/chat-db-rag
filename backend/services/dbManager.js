@@ -94,70 +94,10 @@ const closeAll = async () => {
     pools.clear();
 };
 
-// NUEVO: Extrae el esquema DDL dinámico de la base de datos objetivo
-const extractSchemaForPrompt = async (databaseId, maxTables = 15) => {
-    try {
-        const pool = await getConnection(databaseId);
-
-        // 1. Obtener lista de tablas
-        const [tables] = await pool.query('SHOW TABLES');
-        if (!tables || tables.length === 0) {
-            return '';
-        }
-
-        // 2. Tomar solo las primeras maxTables
-        const tableNames = tables
-            .slice(0, maxTables)
-            .map(t => Object.values(t)[0]);
-
-        // 3. Para cada tabla, obtener su estructura
-        const ddlStatements = [];
-        for (const tableName of tableNames) {
-            try {
-                const [columns] = await pool.query(`DESCRIBE \`${tableName}\``);
-
-                // Construir CREATE TABLE
-                const columnDefs = columns.map(col => {
-                    let def = `  ${col.Field} ${col.Type}`;
-                    if (col.Key === 'PRI') {
-                        def += ' PRIMARY KEY';
-                    }
-                    if (col.Null === 'NO') {
-                        def += ' NOT NULL';
-                    }
-                    return def;
-                });
-
-                const ddl = `CREATE TABLE ${tableName} (\n${columnDefs.join(',\n')}\n);`;
-                ddlStatements.push(ddl);
-            } catch (err) {
-                console.warn(`⚠️ No se pudo describir tabla ${tableName}:`, err.message);
-            }
-        }
-
-        // 4. Unir todos los CREATE TABLE
-        let fullSchema = ddlStatements.join('\n\n');
-
-        // 5. Truncar a máximo 8000 caracteres
-        const MAX_SCHEMA_LENGTH = 8000;
-        if (fullSchema.length > MAX_SCHEMA_LENGTH) {
-            fullSchema = fullSchema.substring(0, MAX_SCHEMA_LENGTH) + '\n-- [Esquema truncado por tamaño...]';
-        }
-
-        return fullSchema;
-
-    } catch (error) {
-        console.error('❌ Error extrayendo esquema:', error.message);
-        return '';
-    }
-};
-
 module.exports = {
     getConnection,
     executeQuery,
     testConnection,
     removePool,
-    closeAll,
-    // NUEVO: Exportar función de extracción de esquema
-    extractSchemaForPrompt
+    closeAll
 };

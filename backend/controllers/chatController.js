@@ -4,8 +4,6 @@ const promptBuilder = require('../services/promptBuilder');
 const aiService = require('../services/aiService');
 const sqlValidator = require('../services/sqlValidator');
 const dbManager = require('../services/dbManager');
-// NUEVO: Importar servicio de memoria de consultas
-const { findSimilarQueries, saveSuccessfulQuery, markQueryFailed, getSchemaGroup } = require('../services/queryMemoryService');
 
 const handleChat = async (req, res, next) => {
     try {
@@ -52,11 +50,11 @@ const handleChat = async (req, res, next) => {
         console.log(`🎯 Intención detectada: ${intent.trim()}`);
 
         if (intent.trim().toUpperCase() === 'GENERAL') {
-            // RECUPERAR HISTORIAL PARA CONTEXTO (optimizado: solo últimos 3 mensajes)
+            // RECUPERAR HISTORIAL PARA CONTEXTO
             const history = await Message.findAll({
                 where: { chatId: currentChatId },
                 order: [['createdAt', 'DESC']],
-                limit: 3
+                limit: 6
             });
             
             const { systemPrompt: genSystem, userPrompt: genUser } = await promptBuilder.buildGeneralChatPrompt(question, history.reverse());
@@ -79,45 +77,9 @@ const handleChat = async (req, res, next) => {
         }
 
         // ================= PASO 1: Generación de SQL =================
-
-        // NUEVO: Obtener schemaGroup de la base de datos para compartir ejemplos entre BDs similares
-        let schemaGroup = 'default';
-        try {
-            schemaGroup = await getSchemaGroup(targetDbId);
-            console.log(`🏷️ SchemaGroup: ${schemaGroup}`);
-        } catch (sgErr) {
-            console.warn('⚠️ No se pudo obtener schemaGroup:', sgErr.message);
-        }
-
-        // NUEVO: Recuperar ejemplos similares de consultas exitosas previas (por schemaGroup)
-        let similarQueries = [];
-        try {
-            similarQueries = await findSimilarQueries(question, schemaGroup);
-            if (similarQueries.length > 0) {
-                console.log(`🧠 Few-shots recuperados: ${similarQueries.length} ejemplos similares [${schemaGroup}]`);
-            }
-        } catch (memErr) {
-            console.warn('⚠️ QueryMemory no disponible (tabla aún no creada?):', memErr.message);
-        }
-
-        // NUEVO: Intentar enriquecer el esquema con DDL dinámico
-        let dynamicSchema = '';
-        try {
-            dynamicSchema = await dbManager.extractSchemaForPrompt(targetDbId);
-            if (dynamicSchema) {
-                console.log(`📋 Esquema dinámico extraído: ${dynamicSchema.length} caracteres`);
-            }
-        } catch (schemaErr) {
-            console.warn('⚠️ No se pudo extraer DDL dinámico:', schemaErr.message);
-        }
-
-        // MODIFICADO: Pasar similarQueries al builder
-        const { systemPrompt: sqlSystemPrompt, userPrompt: sqlUserPrompt } = await promptBuilder.buildSQLPrompt(
-            question,
-            dynamicSchema || dbConfig.description,
-            similarQueries
-        );
+        const { systemPrompt: sqlSystemPrompt, userPrompt: sqlUserPrompt } = await promptBuilder.buildSQLPrompt(question, dbConfig.description);
         
+        // ... (rest of the SQL flow remains the same, but within the controller)
         let rawSQLResponse;
         try {
             rawSQLResponse = await aiService.generateResponse([
@@ -128,20 +90,10 @@ const handleChat = async (req, res, next) => {
             throw new AppError('Hubo un error con la IA generando la consulta.', 500);
         }
 
-        // EXTRAER SOLO EL PRIMER SQL VÁLIDO (ignorar múltiples consultas, texto, etc.)
-        console.log('\n📝 === RESPUESTA COMPLETA DE LA IA ===');
-        console.log(rawSQLResponse);
-        console.log('=====================================\n');
-        
-        const extractedSQL = sqlValidator.extractFirstSQL(rawSQLResponse);
-        console.log('✂️ === SQL EXTRAÍDO ===');
-        console.log(extractedSQL);
-        console.log('======================\n');
-
         // ================= VALIDACIÓN =================
-        const validation = sqlValidator.validate(extractedSQL);
+        const validation = sqlValidator.validate(rawSQLResponse);
         if (!validation.isValid) {
-            const replyMsg = `⚠️ Lo siento, no puedo ejecutar esta acción: ${validation.error}\n\n**SQL Generado por la IA:**\n\`\`\`sql\n${rawSQLResponse}\n\`\`\``;
+            const replyMsg = `⚠️ Lo siento, no puedo ejecutar esta acción: ${validation.error}`;
             await Message.create({
                 chatId: parseInt(currentChatId),
                 role: 'assistant',
@@ -152,8 +104,7 @@ const handleChat = async (req, res, next) => {
                 success: true, 
                 reply: replyMsg,
                 sqlExecuted: rawSQLResponse, 
-                historyId: parseInt(currentChatId),
-                chartData: null
+                historyId: parseInt(currentChatId) 
             });
         }
 
@@ -164,27 +115,7 @@ const handleChat = async (req, res, next) => {
         try {
             const executed = await dbManager.executeQuery(targetDbId, cleanSQL);
             queryResults = executed.rows;
-
-            // NUEVO: Aprender de esta consulta exitosa (con schemaGroup)
-            try {
-                await saveSuccessfulQuery({
-                    questionText: question,
-                    sqlQuery: cleanSQL,
-                    databaseId: targetDbId,
-                    schemaGroup: schemaGroup, // NUEVO: Guardar con el grupo de esquema
-                    rowsReturned: queryResults ? queryResults.length : 0
-                });
-                console.log(`💾 Consulta guardada en QueryMemory (${queryResults?.length ?? 0} filas) [${schemaGroup}]`);
-            } catch (saveErr) {
-                console.warn('⚠️ No se pudo guardar en QueryMemory:', saveErr.message);
-            }
-
         } catch (error) {
-             // NUEVO: Penalizar si esta pregunta tenía un SQL en memoria que volvió a fallar (con schemaGroup)
-             try {
-                await markQueryFailed(question, targetDbId, schemaGroup);
-            } catch (_) {}
-
              const errorMsgStatus = `🔥 Ocurrió un error al ejecutar la estructura en la base de datos.`;
              await Message.create({
                 chatId: parseInt(currentChatId),
@@ -227,8 +158,7 @@ const handleChat = async (req, res, next) => {
             success: true,
             reply: finalReply,
             sqlExecuted: cleanSQL,
-            historyId: parseInt(currentChatId),
-            chartData: queryResults  // Datos para visualización en gráficos
+            historyId: parseInt(currentChatId)
         });
 
     } catch (error) {

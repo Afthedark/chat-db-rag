@@ -51,11 +51,6 @@
                             <i class="bi bi-database me-2"></i> Bases de Datos
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a href="/admin/training" class="nav-link w-100 text-start btn-custom rounded-3">
-                            <i class="bi bi-mortarboard me-2"></i> Entrenar IA
-                        </a>
-                    </li>
                 </ul>
             </nav>
         </aside>
@@ -77,21 +72,17 @@
                 </button>
             </div>
 
-            <!-- Category Filters (Simplificado a 2 categorías) -->
+            <!-- Category Filters -->
             <div class="mb-4 d-flex gap-2 flex-wrap fade-in">
                 <button class="btn rounded-pill badge-filter border-secondary border-opacity-50"
                     :class="categoryFilter === '' ? 'btn-primary' : 'btn-outline-secondary'"
-                    @click="categoryFilter = ''">Todas</button>
+                    @click="categoryFilter = ''">Todos</button>
                 <button class="btn rounded-pill badge-filter border-secondary border-opacity-50"
-                    :class="categoryFilter === 'ESQUEMA' ? 'btn-primary' : 'btn-outline-secondary'"
-                    @click="categoryFilter = 'ESQUEMA'">
-                    <i class="bi bi-database me-1"></i> Esquemas
-                </button>
+                    :class="categoryFilter === 'INSTRUCCIONES' ? 'btn-info text-dark' : 'btn-outline-secondary'"
+                    @click="categoryFilter = 'INSTRUCCIONES'">Instrucciones</button>
                 <button class="btn rounded-pill badge-filter border-secondary border-opacity-50"
-                    :class="categoryFilter === 'INSTRUCCIONES' ? 'btn-success' : 'btn-outline-secondary'"
-                    @click="categoryFilter = 'INSTRUCCIONES'">
-                    <i class="bi bi-robot me-1"></i> Instrucciones IA
-                </button>
+                    :class="categoryFilter === 'EJEMPLOS_SQL' ? 'btn-success' : 'btn-outline-secondary'"
+                    @click="categoryFilter = 'EJEMPLOS_SQL'">Ejemplos SQL</button>
             </div>
 
             <!-- Rules Table Content -->
@@ -114,8 +105,7 @@
                                     x-text="rule.key"></td>
                                 <td>
                                     <span class="badge rounded-pill shadow-sm"
-                                        :class="getSimpleCategoryBadgeClass(rule.category)" 
-                                        x-text="getSimpleCategoryLabel(rule.category)"></span>
+                                        :class="getCategoryBadgeClass(rule.category)" x-text="rule.category"></span>
                                 </td>
                                 <td class="text-truncate text-secondary small" style="max-width: 300px;"
                                     x-text="rule.content"></td>
@@ -163,53 +153,6 @@
                         </div>
                         <form @submit.prevent="saveRule()">
                             <div class="modal-body p-4">
-                                <!-- Selector de Tipo (2 opciones grandes) -->
-                                <div x-show="!isEditingRule" class="mb-4">
-                                    <label class="form-label text-secondary fw-bold small opacity-75 mb-3">¿Qué tipo de regla quieres crear?</label>
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <div class="card h-100 cursor-pointer border-2"
-                                                :class="simpleCategoryType === 'ESQUEMA' ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary border-opacity-25'"
-                                                @click="simpleCategoryType = 'ESQUEMA'; updateCategoryFromSimpleType()"
-                                                style="background: var(--bg-darker); transition: all 0.2s;">
-                                                <div class="card-body text-center p-4">
-                                                    <i class="bi bi-database fs-1 mb-3"
-                                                        :class="simpleCategoryType === 'ESQUEMA' ? 'text-primary' : 'text-secondary'"></i>
-                                                    <h5 class="card-title fw-bold mb-2">Esquema de Base de Datos</h5>
-                                                    <p class="card-text small text-secondary mb-0">Define tablas, columnas y relaciones SQL</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="card h-100 cursor-pointer border-2"
-                                                :class="simpleCategoryType === 'INSTRUCCIONES' ? 'border-success bg-success bg-opacity-10' : 'border-secondary border-opacity-25'"
-                                                @click="simpleCategoryType = 'INSTRUCCIONES'; updateCategoryFromSimpleType()"
-                                                style="background: var(--bg-darker); transition: all 0.2s;">
-                                                <div class="card-body text-center p-4">
-                                                    <i class="bi bi-robot fs-1 mb-3"
-                                                        :class="simpleCategoryType === 'INSTRUCCIONES' ? 'text-success' : 'text-secondary'"></i>
-                                                    <h5 class="card-title fw-bold mb-2">Instrucciones para la IA</h5>
-                                                    <p class="card-text small text-secondary mb-0">Prompts, ejemplos y formato de respuestas</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- En modo edición, mostrar tipo actual -->
-                                <div x-show="isEditingRule" class="mb-4 p-3 rounded-3"
-                                    :class="getSimpleCategoryBadgeClass(ruleForm.category).replace('badge', '').replace('rounded-pill', '').replace('shadow-sm', '')"
-                                    style="background: var(--bg-darker);">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <i class="bi fs-4"
-                                            :class="getSimpleCategoryLabel(ruleForm.category) === 'Esquema' ? 'bi-database text-primary' : 'bi-robot text-success'"></i>
-                                        <div>
-                                            <span class="small text-secondary">Tipo de regla:</span>
-                                            <span class="fw-bold ms-1" x-text="getSimpleCategoryLabel(ruleForm.category)"></span>
-                                        </div>
-                                    </div>
-                                </div>
-
                                 <div class="row g-4">
                                     <div class="col-md-6">
                                         <label class="form-label text-secondary fw-bold small opacity-75">Key (ID
@@ -220,17 +163,22 @@
                                             x-model="ruleForm.key" required pattern="[A-Za-z0-9_]+"
                                             placeholder="ej_ventas_ddl">
                                     </div>
-                                    <div class="col-md-6" x-show="false">
-                                        <!-- Campo oculto para mantener compatibilidad con backend -->
-                                        <select class="form-select" x-model="ruleForm.category">
-                                            <option value="ESTRUCTURA_DB">ESTRUCTURA_DB</option>
-                                            <option value="PROMPT_SISTEMA">PROMPT_SISTEMA</option>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-secondary fw-bold small opacity-75">Tipo de
+                                            Regla</label>
+                                        <select class="form-select border-secondary no-ring"
+                                            style="background: var(--bg-darker); color: var(--c-text-1);"
+                                            x-model="ruleForm.category" @change="onCategoryChange()" required>
+                                            <option value="INSTRUCCIONES" class="bg-body text-body">INSTRUCCIONES
+                                                (Prompts del Sistema)</option>
+                                            <option value="EJEMPLOS_SQL" class="bg-body text-body">EJEMPLOS_SQL
+                                                (Ejemplos para Aprendizaje)</option>
                                         </select>
                                     </div>
                                     <div class="col-12">
                                         <div class="d-flex justify-content-between mb-2">
                                             <label class="form-label text-secondary fw-bold small opacity-75"
-                                                x-text="getContentLabel()"></label>
+                                                x-text="contentLabel">Contenido</label>
                                             <div class="form-check form-switch m-0 d-flex align-items-center gap-2">
                                                 <label class="form-check-label small opacity-75"
                                                     for="ruleActiveCheck">Regla Activa</label>
@@ -238,10 +186,30 @@
                                                     x-model="ruleForm.isActive" id="ruleActiveCheck">
                                             </div>
                                         </div>
+                                        
+                                        <!-- Help box for EJEMPLOS_SQL -->
+                                        <div x-show="showFormatHelp" x-transition class="alert alert-info alert-dismissible fade show mb-3" role="alert" style="background: rgba(13, 202, 240, 0.1); border-color: rgba(13, 202, 240, 0.3);">
+                                            <h6 class="alert-heading fw-bold"><i class="bi bi-lightbulb me-2"></i>Formato para Ejemplos SQL</h6>
+                                            <p class="mb-2 small">Escribe múltiples ejemplos separados por <code>---</code>:</p>
+                                            <pre class="small mb-0" style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">Pregunta: ¿Cuántas ventas hubo hoy?
+SQL: SELECT COUNT(*) FROM ventas WHERE DATE(fecha) = CURDATE();
+
+---
+
+Pregunta: Top 5 productos más vendidos
+SQL: SELECT p.nombre, SUM(dv.cantidad) as total 
+FROM productos p 
+JOIN detalle_ventas dv ON p.id = dv.producto_id 
+GROUP BY p.id 
+ORDER BY total DESC 
+LIMIT 5;</pre>
+                                            <button type="button" class="btn-close" @click="showFormatHelp = false" aria-label="Close"></button>
+                                        </div>
+                                        
                                         <textarea class="form-control border-secondary font-monospace p-3 no-ring"
                                             style="background: var(--bg-darker); color: var(--c-text-1); font-size: 0.9rem;"
-                                            rows="10" x-model="ruleForm.content" required
-                                            :placeholder="getContentPlaceholder()"></textarea>
+                                            rows="15" x-model="ruleForm.content" required
+                                            :placeholder="contentPlaceholder"></textarea>
                                     </div>
                                 </div>
                             </div>

@@ -6,11 +6,6 @@ require('dotenv').config();
 const generateResponse = async (messages) => {
     const provider = process.env.AI_PROVIDER || 'ollama';
 
-    // DEBUG: Calcular tamaño aproximado del contexto
-    const contextSize = JSON.stringify(messages).length;
-    const estimatedTokens = Math.ceil(contextSize / 4); // Aproximación: ~4 chars/token
-    console.log(`📝 Contexto enviado a ${provider}: ~${estimatedTokens} tokens (${contextSize} chars)`);
-
     try {
         if (provider === 'openrouter') {
             const openai = new OpenAI({
