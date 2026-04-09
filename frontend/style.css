@@ -257,3 +257,92 @@ main.main-panel {
     padding: 8px 16px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
+
+/* ============ CHART MODAL STYLES ============ */
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 50vh;
+    min-height: 300px;
+    background: var(--bg-darker);
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+#chartModal .modal-content {
+    border: 1px solid var(--c-border);
+}
+
+#chartModal .modal-header {
+    background: var(--bg-darker);
+}
+
+#chartModal .modal-footer {
+    background: var(--bg-darker);
+}
+
+#chartModal .btn-group .btn {
+    border-color: var(--c-border);
+}
+
+#chartModal .btn-group .btn.active {
+    background-color: var(--c-primary);
+    border-color: var(--c-primary);
+    color: white;
+}
+
+#chartModal .btn-outline-secondary {
+    color: var(--c-text-2);
+    border-color: var(--c-border);
+}
+
+#chartModal .btn-outline-secondary:hover {
+    background-color: var(--c-primary);
+    border-color: var(--c-primary);
+    color: white;
+}
+
+#chartModal .btn-outline-info {
+    color: var(--c-text-2);
+    border-color: var(--c-border);
+}
+
+#chartModal .btn-outline-info:hover {
+    background-color: #0dcaf0;
+    border-color: #0dcaf0;
+    color: #000;
+}
+
+/* Chart canvas responsive */
+#chartCanvas {
+    max-height: 100% !important;
+    width: 100% !important;
+}
+
+/* Deep Chat Custom Button Styles */
+deep-chat .deep-chat-button-container {
+    display: flex;
+    align-items: center;
+}
+
+/* Mobile adjustments for chart modal */
+@media (max-width: 768px) {
+    .chart-container {
+        height: 40vh;
+        min-height: 250px;
+    }
+    
+    #chartModal .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    #chartModal .btn-group {
+        flex-wrap: wrap;
+    }
+    
+    #chartModal .btn-group .btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+}

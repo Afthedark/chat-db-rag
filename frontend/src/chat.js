@@ -6,6 +6,11 @@ window.chatApp = function() {
         currentChatId: null,
         theme: 'dark', // 'light' or 'dark'
         
+        // --- CHART STATE ---
+        chartData: [],
+        chartType: 'bar',
+        chartButtonRef: null,
+        
         // --- DATA ---
         chats: [],
         messages: [],
@@ -153,6 +158,102 @@ window.chatApp = function() {
                     }
                 },
 
+                // Botón personalizado para gráficos
+                customButtons: [
+                    {
+                        position: 'outside-end',
+                        initialState: 'disabled',
+                        tooltip: {
+                            text: 'Generar gráficos de los datos',
+                            style: {
+                                backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                                color: isDark ? '#e5e7eb' : '#374151',
+                                border: isDark ? '1px solid #374151' : '1px solid #e5e7eb',
+                                borderRadius: '8px',
+                                padding: '6px 12px',
+                                fontSize: '12px',
+                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        styles: {
+                            button: {
+                                default: {
+                                    container: {
+                                        default: {
+                                            backgroundColor: isDark ? '#10b981' : '#10b981',
+                                            borderRadius: '50%',
+                                            width: '36px',
+                                            height: '36px',
+                                            marginLeft: '8px',
+                                            transition: 'all 0.2s ease'
+                                        },
+                                        hover: {
+                                            backgroundColor: isDark ? '#059669' : '#059669',
+                                            transform: 'scale(1.05)'
+                                        },
+                                        click: {
+                                            transform: 'scale(0.95)'
+                                        }
+                                    },
+                                    svg: {
+                                        styles: {
+                                            default: {
+                                                filter: 'brightness(0) invert(1)'
+                                            }
+                                        },
+                                        content: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>'
+                                    }
+                                },
+                                active: {
+                                    container: {
+                                        default: {
+                                            backgroundColor: isDark ? '#059669' : '#059669',
+                                            borderRadius: '50%',
+                                            width: '36px',
+                                            height: '36px',
+                                            marginLeft: '8px',
+                                            transform: 'scale(1.05)',
+                                            boxShadow: '0 0 0 3px rgba(16, 185, 129, 0.3)'
+                                        }
+                                    },
+                                    svg: {
+                                        styles: {
+                                            default: {
+                                                filter: 'brightness(0) invert(1)'
+                                            }
+                                        },
+                                        content: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>'
+                                    }
+                                },
+                                disabled: {
+                                    container: {
+                                        default: {
+                                            backgroundColor: isDark ? '#374151' : '#e5e7eb',
+                                            borderRadius: '50%',
+                                            width: '36px',
+                                            height: '36px',
+                                            marginLeft: '8px',
+                                            opacity: '0.4',
+                                            cursor: 'not-allowed'
+                                        }
+                                    },
+                                    svg: {
+                                        styles: {
+                                            default: {
+                                                filter: isDark ? 'brightness(0.4)' : 'brightness(0.6)'
+                                            }
+                                        },
+                                        content: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>'
+                                    }
+                                }
+                            }
+                        },
+                        onClick: () => {
+                            this.openChartModal();
+                        }
+                    }
+                ],
+
                 // CSS interno del shadow DOM
                 auxiliaryStyle: `
                     .deep-chat-container {
@@ -203,8 +304,28 @@ window.chatApp = function() {
                 }
             };
 
+            // Evento cuando el componente se renderiza completamente
+            chatEl.onComponentRender = () => {
+                // Guardar referencia al botón de gráficos cuando esté listo
+                if (chatEl.customButtons && chatEl.customButtons[0]) {
+                    this.chartButtonRef = chatEl.customButtons[0];
+                    // Aplicar estado inicial basado en si hay datos
+                    this.updateChartButtonState(this.chartData.length > 0 ? 'default' : 'disabled');
+                }
+            };
+
             // Aplicar estilos iniciales del tema
             this.applyDeepChatTheme();
+        },
+
+        /**
+         * Actualiza el estado del botón de gráficos de forma segura
+         * @param {string} state - 'default', 'active', o 'disabled'
+         */
+        updateChartButtonState(state) {
+            if (this.chartButtonRef && this.chartButtonRef.setState) {
+                this.chartButtonRef.setState(state);
+            }
         },
 
         // Asigna propiedades de Deep Chat directamente al DOM (método correcto, evita serializar JS)
@@ -241,6 +362,17 @@ window.chatApp = function() {
                     this.currentChatId = res.data.historyId;
                     localStorage.setItem('last_chat_id', this.currentChatId);
                     
+                    // Guardar datos para gráficos si existen
+                    if (res.data.hasData && res.data.results) {
+                        this.chartData = res.data.results;
+                        // Habilitar botón de gráficos
+                        this.updateChartButtonState('default');
+                    } else {
+                        this.chartData = [];
+                        // Deshabilitar botón de gráficos
+                        this.updateChartButtonState('disabled');
+                    }
+
                     if (res.data.sqlExecuted) {
                         let htmlContent = this.formatMessage(res.data.reply);
                         htmlContent += `
@@ -321,6 +453,10 @@ window.chatApp = function() {
             this.messages = [];
             this.selectedDatabaseId = '';
             this.isLoading = false;
+            
+            // Resetear datos de gráficos y deshabilitar botón
+            this.chartData = [];
+            this.updateChartButtonState('disabled');
             
             localStorage.removeItem('last_chat_id');
             const chatEl = document.getElementById('rag-deep-chat');
@@ -457,6 +593,50 @@ window.chatApp = function() {
 
         showToast(message, icon = 'info') {
             UIUtils.showToast(message, icon);
+        },
+
+        // ============ CHART METHODS ============
+
+        openChartModal() {
+            if (!this.chartData || this.chartData.length === 0) {
+                this.showToast('No hay datos para visualizar', 'warning');
+                return;
+            }
+
+            // Inicializar ChartService
+            ChartService.init('chartCanvas')
+                .setData(this.chartData);
+
+            // Detectar tipo automáticamente
+            this.chartType = ChartService.detectChartType(this.chartData);
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('chartModal'));
+            modal.show();
+
+            // Generar gráfico después de que el modal esté visible
+            this.$nextTick(() => {
+                ChartService.generateChart(this.chartType);
+            });
+        },
+
+        closeChartModal() {
+            ChartService.destroy();
+        },
+
+        changeChartType(type) {
+            this.chartType = type;
+            ChartService.changeChartType(type);
+        },
+
+        autoDetectChartType() {
+            this.chartType = ChartService.detectChartType(this.chartData);
+            ChartService.generateChart(this.chartType);
+        },
+
+        downloadChart() {
+            const filename = `grafico-chat-${this.currentChatId || 'nuevo'}-${Date.now()}.png`;
+            ChartService.downloadImage(filename);
         }
     }
 }

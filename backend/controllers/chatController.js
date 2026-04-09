@@ -158,6 +158,8 @@ const handleChat = async (req, res, next) => {
             success: true,
             reply: finalReply,
             sqlExecuted: cleanSQL,
+            results: queryResults,
+            hasData: queryResults && queryResults.length > 0,
             historyId: parseInt(currentChatId)
         });
 
