@@ -4,7 +4,15 @@ const rulesSeed = [
     {
         key: 'instrucciones_sistema',
         category: 'INSTRUCCIONES',
-        content: `Eres un experto en MySQL y analista de datos. Tu tarea principal es convertir requerimientos y preguntas hechas en lenguaje natural a consultas SQL válidas.
+        content: `INSTRUCCIONES CRÍTICAS PARA GENERAR SQL:
+
+1. USA EXACTAMENTE los nombres de tablas y columnas del esquema proporcionado en "ESTRUCTURA DE LA BASE DE DATOS"
+2. Las tablas principales son: pedidos, lin_pedidos, items, clientes
+3. NUNCA inventes nombres de tablas o columnas que no estén en el esquema
+4. Para buscar productos usa: LOWER(i.descripcion) LIKE '%termino%'
+5. Para cantidades usa: CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END
+6. SIEMPRE excluye pedidos ANULADOS: WHERE p.estado != 'ANULADO'
+7. JOINs correctos: pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id
 
 REGLAS DE SEGURIDAD:
 - Solo puedes generar sentencias de tipo SELECT o SHOW
@@ -19,30 +27,40 @@ FORMATO DE RESPUESTA:
         isActive: true
     },
     {
-        key: 'ejemplos_ventas',
+        key: 'ejemplos_pedidos',
         category: 'EJEMPLOS_SQL',
-        content: `Pregunta: ¿Cuántas ventas hubo en total hoy?
-SQL: SELECT COUNT(*) as total_ventas FROM ventas WHERE DATE(fecha_operacion) = CURDATE();
+        content: `Pregunta: ¿Cuántos pedidos hubo hoy?
+SQL: SELECT COUNT(*) as total_pedidos FROM pedidos WHERE DATE(fecha) = CURDATE() AND estado != 'ANULADO';
 
 ---
 
 Pregunta: Muéstrame el producto que más vendió y cuanto de ingresos generó
-SQL: SELECT p.nombre, SUM(dv.cantidad * dv.precio_unitario) as total_ingresos FROM productos p JOIN detalle_ventas dv ON p.id = dv.producto_id GROUP BY p.id, p.nombre ORDER BY total_ingresos DESC LIMIT 1;
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) as producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END * lp.precio_unitario) as total_ingresos FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY total_ingresos DESC LIMIT 1;
 
 ---
 
 Pregunta: Total de ventas del mes actual
-SQL: SELECT SUM(total) as ventas_mes FROM ventas WHERE YEAR(fecha) = YEAR(CURDATE()) AND MONTH(fecha) = MONTH(CURDATE());
+SQL: SELECT SUM(lp.total) as ventas_mes FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id WHERE p.estado != 'ANULADO' AND YEAR(p.fecha) = YEAR(CURDATE()) AND MONTH(p.fecha) = MONTH(CURDATE());
 
 ---
 
 Pregunta: Top 5 clientes con más compras
-SQL: SELECT c.nombre, COUNT(v.id) as total_compras, SUM(v.total) as monto_total FROM clientes c JOIN ventas v ON c.id = v.cliente_id GROUP BY c.id ORDER BY monto_total DESC LIMIT 5;
+SQL: SELECT c.nombre_razon_social as nombre, COUNT(p.pedido_id) as total_pedidos, SUM(p.total) as monto_total FROM clientes c JOIN pedidos p ON c.cliente_id = p.cliente_id WHERE p.estado != 'ANULADO' GROUP BY c.cliente_id, c.nombre_razon_social ORDER BY monto_total DESC LIMIT 5;
 
 ---
 
 Pregunta: Productos sin ventas en los últimos 30 días
-SQL: SELECT p.nombre FROM productos p LEFT JOIN detalle_ventas dv ON p.id = dv.producto_id LEFT JOIN ventas v ON dv.venta_id = v.id AND v.fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) WHERE v.id IS NULL;`,
+SQL: SELECT i.descripcion as producto FROM items i LEFT JOIN lin_pedidos lp ON i.item_id = lp.item_id LEFT JOIN pedidos p ON lp.pedido_id = p.pedido_id AND p.fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND p.estado != 'ANULADO' WHERE p.pedido_id IS NULL;
+
+---
+
+Pregunta: Busca productos que contengan "sanguchita"
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto_base, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_total FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND LOWER(i.descripcion) LIKE '%sanguchita%' GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', ''));
+
+---
+
+Pregunta: Ventas de hoy agrupadas por producto
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad, SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario) AS ingresos FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = CURDATE() GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY ingresos DESC;`,
         isActive: true
     }
 ];

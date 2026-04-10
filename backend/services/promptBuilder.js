@@ -22,10 +22,8 @@ const buildSQLPrompt = async (question, dbDescription) => {
     
     const systemPromptParts = [];
     
-    if (rules.INSTRUCCIONES) {
-        systemPromptParts.push(rules.INSTRUCCIONES);
-    } else {
-        systemPromptParts.push(`Eres un experto en MySQL y analista de datos. Tu tarea principal es convertir requerimientos y preguntas hechas en lenguaje natural a consultas SQL válidas.
+    // Instrucciones base
+    systemPromptParts.push(`Eres un experto en MySQL y analista de datos. Tu tarea principal es convertir requerimientos y preguntas hechas en lenguaje natural a consultas SQL válidas.
 
 REGLAS DE SEGURIDAD:
 - Solo puedes generar sentencias de tipo SELECT o SHOW
@@ -37,28 +35,51 @@ FORMATO DE RESPUESTA:
 - Sin explicaciones adicionales
 - NO uses bloques de markdown
 - Devuelve solo la cadena SQL pura lista para ejecutarse`);
+    
+    // Agregar reglas personalizadas si existen
+    if (rules.INSTRUCCIONES) {
+        systemPromptParts.push('\n=== INSTRUCCIONES ADICIONALES ===');
+        systemPromptParts.push(rules.INSTRUCCIONES);
     }
     
-    systemPromptParts.push('\n=== ESTRUCTURA DE LA BASE DE DATOS ===');
-    if (dbDescription) systemPromptParts.push(dbDescription);
+    // ESTRUCTURA DE BASE DE DATOS - CRÍTICO
+    systemPromptParts.push('\n=== ESTRUCTURA DE LA BASE DE DATOS - USAR EXACTAMENTE ESTOS NOMBRES ===');
+    if (dbDescription) {
+        systemPromptParts.push(dbDescription);
+    } else {
+        systemPromptParts.push('No se proporcionó descripción de la base de datos.');
+    }
     
+    // Ejemplos SQL
     if (rules.EJEMPLOS_SQL) {
         systemPromptParts.push('\n=== EJEMPLOS DE CONSULTAS (APRENDE DE ESTOS PATRONES) ===');
         systemPromptParts.push(rules.EJEMPLOS_SQL);
         systemPromptParts.push('\n=== FIN EJEMPLOS ===');
     }
     
-    systemPromptParts.push(`\nREGLAS ESTRICTAS:
-- Responde ÚNICAMENTE con la consulta SQL. 
-- Solo puedes generar comandos SELECT.
-- Si no te piden un número de registros específico, asume un máximo lógico y asegúrate de limitarlo si no rompe la agregación (por defecto la app luego agregará LIMIT 1000 si falta).
-- NUNCA uses INSERT, UPDATE, DELETE, DROP.
-- No uses delimitadores de markdown tipo \`\`\`sql en la respuesta, devuelve solo la cadena SQL.`);
+    systemPromptParts.push(`\n=== REGLAS ESTRICTAS Y OBLIGATORIAS ===
+1. USA EXACTAMENTE los nombres de tablas y columnas definidos en la ESTRUCTURA DE BASE DE DATOS arriba
+2. Para buscar productos: usa LOWER(i.descripcion) LIKE '%termino%'
+3. Para cantidades: usa CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END
+4. SIEMPRE excluye pedidos ANULADOS: WHERE p.estado != 'ANULADO'
+5. JOINs correctos: pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id
+6. Responde ÚNICAMENTE con la consulta SQL pura, sin markdown, sin explicaciones
+7. Solo comandos SELECT permitidos`);
 
-    return {
+    const finalPrompt = {
         systemPrompt: systemPromptParts.join('\n'),
-        userPrompt: `Pregunta de usuario: ${question}`
+        userPrompt: `Pregunta de usuario: ${question}\n\nGenera el SQL usando EXACTAMENTE los nombres de tablas y columnas de la estructura proporcionada arriba.`
     };
+    
+    // Debug: log del prompt completo
+    console.log('=== SQL PROMPT DEBUG ===');
+    console.log('System Prompt Length:', finalPrompt.systemPrompt.length);
+    console.log('DB Description Included:', dbDescription ? 'YES' : 'NO');
+    console.log('DB Description Length:', dbDescription ? dbDescription.length : 0);
+    console.log('User Prompt:', finalPrompt.userPrompt);
+    console.log('========================');
+    
+    return finalPrompt;
 };
 
 const buildBusinessPrompt = async (question, sqlResults, sqlQuery) => {

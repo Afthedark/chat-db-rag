@@ -86,6 +86,11 @@ const handleChat = async (req, res, next) => {
                 { role: 'system', content: sqlSystemPrompt },
                 { role: 'user', content: sqlUserPrompt }
             ]);
+            
+            // Debug: log de la respuesta de la IA
+            console.log('=== IA RESPONSE DEBUG ===');
+            console.log('Raw SQL Response:', rawSQLResponse);
+            console.log('=========================');
         } catch (error) {
             throw new AppError('Hubo un error con la IA generando la consulta.', 500);
         }
@@ -116,7 +121,12 @@ const handleChat = async (req, res, next) => {
             const executed = await dbManager.executeQuery(targetDbId, cleanSQL);
             queryResults = executed.rows;
         } catch (error) {
-             const errorMsgStatus = `🔥 Ocurrió un error al ejecutar la estructura en la base de datos.`;
+             console.log('=== SQL EXECUTION ERROR ===');
+             console.log('Error:', error.message);
+             console.log('SQL:', cleanSQL);
+             console.log('===========================');
+             
+             const errorMsgStatus = `🔥 Error en la base de datos: ${error.message}`;
              await Message.create({
                 chatId: parseInt(currentChatId),
                 role: 'assistant',
@@ -126,7 +136,7 @@ const handleChat = async (req, res, next) => {
             });
             return res.json({
                 success: true,
-                reply: `🔥 La base de datos rechazó la consulta. Por favor, asegúrate que las reglas del esquema estén correctas o intenta reformular.`,
+                reply: `🔥 La base de datos rechazó la consulta: ${error.message}`,
                 sqlExecuted: cleanSQL,
                 historyId: parseInt(currentChatId)
             });
