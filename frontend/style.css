@@ -56,12 +56,19 @@ body {
     width: 280px;
     min-width: 280px;
     height: 100vh;
+    height: 100dvh;
     border-right: 1px solid var(--c-border);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color var(--transition-speed);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
     z-index: 1050;
     background: var(--bg-panel);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    position: relative;
+}
+
+/* Sidebar overlay base styles */
+.sidebar-overlay {
+    display: none;
 }
 
 .main-panel {
@@ -172,21 +179,177 @@ body {
         left: 0;
         top: 0;
         transform: translateX(-100%);
-        width: 100%;
+        width: 85%;
         max-width: 300px;
+        height: 100vh;
+        height: 100dvh;
+        z-index: 1050;
     }
 
     .sidebar.mobile-open {
         transform: translateX(0);
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
     }
 
     .main-panel {
         height: 100dvh;
+        width: 100%;
+        padding-top: 56px;
+        margin-left: 0 !important;
     }
 
     .mobile-header {
         height: 56px;
-        z-index: 1100;
+        z-index: 1060;
+        background: var(--bg-main) !important;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    /* Ensure body doesn't scroll horizontally */
+    body {
+        overflow-x: hidden !important;
+    }
+
+    /* Wrapper should not allow horizontal overflow */
+    .wrapper-scroll {
+        overflow-x: hidden !important;
+        overflow-y: hidden !important;
+    }
+
+    /* Chat viewport adjustments for mobile */
+    .chat-viewport {
+        padding-top: 0 !important;
+    }
+
+    /* Top bar mobile optimizations */
+    .chat-viewport > .d-flex.align-items-center.justify-content-between {
+        flex-wrap: wrap;
+        gap: 0.5rem !important;
+        padding: 0.75rem !important;
+    }
+
+    .chat-viewport > .d-flex.align-items-center.justify-content-between > div:first-child {
+        flex: 1 1 100%;
+        order: 2;
+    }
+
+    .chat-viewport > .d-flex.align-items-center.justify-content-between > div:last-child {
+        flex: 0 0 auto;
+        order: 1;
+        margin-left: auto !important;
+    }
+
+    /* Database selector mobile */
+    .chat-viewport select.form-select {
+        min-width: 120px !important;
+        max-width: 200px;
+        font-size: 0.875rem;
+    }
+
+    /* System info pill mobile */
+    .chat-viewport .rounded-pill.border-secondary {
+        font-size: 0.7rem !important;
+        padding: 0.25rem 0.5rem !important;
+    }
+
+    .chat-viewport .rounded-pill .text-truncate {
+        max-width: 80px !important;
+    }
+
+    /* New chat button mobile */
+    .chat-viewport button.rounded-pill {
+        padding: 0.25rem 0.75rem !important;
+        font-size: 0.8rem;
+    }
+
+    /* Message bubbles mobile */
+    .message-bubble {
+        max-width: 92% !important;
+    }
+
+    /* Deep chat mobile adjustments */
+    #rag-deep-chat {
+        --chat-input-height: 60px;
+        min-height: 0 !important;
+    }
+
+    /* Ensure deep chat takes available space */
+    .chat-viewport deep-chat {
+        height: calc(100% - 60px) !important;
+    }
+
+    /* Chat history items mobile */
+    .chat-history-item {
+        font-size: 0.875rem;
+    }
+
+    .chat-history-item button {
+        padding: 0.5rem 0.75rem;
+    }
+
+    /* Sidebar overlay */
+    .sidebar-overlay {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(2px);
+        z-index: 1040;
+    }
+
+    /* Admin pages mobile adjustments */
+    .main-panel.glass-main {
+        padding-top: calc(56px + 1rem) !important;
+    }
+
+    /* Cards grid mobile */
+    .main-panel .row.g-4 {
+        --bs-gutter-x: 0.75rem;
+        --bs-gutter-y: 0.75rem;
+    }
+
+    /* Page header mobile */
+    .main-panel h2.fw-bold {
+        font-size: 1.25rem;
+    }
+
+    .main-panel h2.fw-bold + p {
+        font-size: 0.8rem;
+    }
+
+    /* Database cards mobile */
+    .card .rounded-circle {
+        width: 44px !important;
+        height: 44px !important;
+    }
+
+    .card .rounded-circle i {
+        font-size: 1.25rem !important;
+    }
+
+    /* Form switch mobile */
+    .form-switch .form-check-input {
+        width: 2.5rem;
+        height: 1.25rem;
+    }
+
+    /* Tables mobile */
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+
+    /* Modal mobile */
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+
+    /* Buttons mobile */
+    .btn-group .btn {
+        padding: 0.375rem;
     }
 }
 

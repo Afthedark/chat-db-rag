@@ -1,0 +1,237 @@
+/* ============================================
+   Chat DB RAG - Mobile Styles
+   Media queries y estilos específicos para móvil
+   Cargar DESPUÉS de base.css
+   ============================================ */
+
+/* Mobile Breakpoint: 768px (consistente con Bootstrap) */
+@media (max-width: 768px) {
+    
+    /* ============================================
+       Layout & Structure
+       ============================================ */
+    
+    body {
+        overflow-x: hidden !important;
+    }
+    
+    .wrapper-scroll {
+        overflow-x: hidden !important;
+        overflow-y: hidden !important;
+    }
+    
+    /* ============================================
+       Mobile Header (Fixed Top)
+       ============================================ */
+    
+    .mobile-header {
+        height: 56px;
+        z-index: 1060;
+        background: var(--bg-main) !important;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+    
+    /* ============================================
+       Sidebar - Mobile Behavior
+       ============================================ */
+    
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        transform: translateX(-100%);
+        width: 85%;
+        max-width: 300px;
+        height: 100vh;
+        height: 100dvh;
+        z-index: 1050;
+    }
+    
+    .sidebar.mobile-open {
+        transform: translateX(0);
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
+    }
+    
+    /* Sidebar Overlay */
+    .sidebar-overlay {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(2px);
+        z-index: 1040;
+    }
+    
+    /* ============================================
+       Main Panel - Mobile Adjustments
+       ============================================ */
+    
+    .main-panel {
+        height: 100dvh;
+        width: 100%;
+        padding-top: 56px;
+        margin-left: 0 !important;
+    }
+    
+    .main-panel.glass-main {
+        padding-top: calc(56px + 1rem) !important;
+    }
+    
+    /* ============================================
+       Chat Viewport - Mobile
+       ============================================ */
+    
+    .chat-viewport {
+        padding-top: 0 !important;
+    }
+    
+    /* Top bar mobile layout */
+    .chat-viewport > .d-flex.align-items-center.justify-content-between {
+        flex-wrap: wrap;
+        gap: 0.5rem !important;
+        padding: 0.75rem !important;
+    }
+    
+    .chat-viewport > .d-flex.align-items-center.justify-content-between > div:first-child {
+        flex: 1 1 100%;
+        order: 2;
+    }
+    
+    .chat-viewport > .d-flex.align-items-center.justify-content-between > div:last-child {
+        flex: 0 0 auto;
+        order: 1;
+        margin-left: auto !important;
+    }
+    
+    /* Database selector mobile */
+    .chat-viewport select.form-select {
+        min-width: 120px !important;
+        max-width: 200px;
+        font-size: 0.875rem;
+    }
+    
+    /* System info pill mobile */
+    .chat-viewport .rounded-pill.border-secondary {
+        font-size: 0.7rem !important;
+        padding: 0.25rem 0.5rem !important;
+    }
+    
+    .chat-viewport .rounded-pill .text-truncate {
+        max-width: 80px !important;
+    }
+    
+    /* New chat button mobile */
+    .chat-viewport button.rounded-pill {
+        padding: 0.25rem 0.75rem !important;
+        font-size: 0.8rem;
+    }
+    
+    /* Message bubbles mobile */
+    .message-bubble {
+        max-width: 92% !important;
+    }
+    
+    /* Deep chat mobile adjustments */
+    #rag-deep-chat {
+        --chat-input-height: 60px;
+        min-height: 0 !important;
+    }
+    
+    .chat-viewport deep-chat {
+        height: calc(100% - 60px) !important;
+    }
+    
+    /* Chat history items mobile */
+    .chat-history-item {
+        font-size: 0.875rem;
+    }
+    
+    .chat-history-item button {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    /* ============================================
+       Admin Pages - Mobile
+       ============================================ */
+    
+    /* Cards grid mobile */
+    .main-panel .row.g-4 {
+        --bs-gutter-x: 0.75rem;
+        --bs-gutter-y: 0.75rem;
+    }
+    
+    /* Page header mobile */
+    .main-panel h2.fw-bold {
+        font-size: 1.25rem;
+    }
+    
+    .main-panel h2.fw-bold + p {
+        font-size: 0.8rem;
+    }
+    
+    /* Database cards mobile */
+    .card .rounded-circle {
+        width: 44px !important;
+        height: 44px !important;
+    }
+    
+    .card .rounded-circle i {
+        font-size: 1.25rem !important;
+    }
+    
+    /* Form switch mobile */
+    .form-switch .form-check-input {
+        width: 2.5rem;
+        height: 1.25rem;
+    }
+    
+    /* Tables mobile */
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+    
+    /* Modal mobile */
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    /* Buttons mobile */
+    .btn-group .btn {
+        padding: 0.375rem;
+    }
+}
+
+/* ============================================
+   Tablet Adjustments (769px - 991px)
+   ============================================ */
+
+@media (min-width: 769px) and (max-width: 991px) {
+    .sidebar {
+        width: 260px;
+        min-width: 260px;
+    }
+    
+    .message-bubble {
+        max-width: 80%;
+    }
+}
+
+/* ============================================
+   Large Desktop Enhancements (1200px+)
+   ============================================ */
+
+@media (min-width: 1200px) {
+    .sidebar {
+        width: 300px;
+        min-width: 300px;
+    }
+    
+    .chat-viewport {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+}
