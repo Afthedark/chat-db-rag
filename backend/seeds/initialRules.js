@@ -7,12 +7,15 @@ const rulesSeed = [
         content: `INSTRUCCIONES CRÍTICAS PARA GENERAR SQL:
 
 1. USA EXACTAMENTE los nombres de tablas y columnas del esquema proporcionado en "ESTRUCTURA DE LA BASE DE DATOS"
-2. Las tablas principales son: pedidos, lin_pedidos, items, clientes
+2. Las tablas disponibles son ÚNICAMENTE: pedidos, lin_pedidos, items, clientes - NO uses otras tablas
 3. NUNCA inventes nombres de tablas o columnas que no estén en el esquema
 4. Para buscar productos usa: LOWER(i.descripcion) LIKE '%termino%'
 5. Para cantidades usa: CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END
 6. SIEMPRE excluye pedidos ANULADOS: WHERE p.estado != 'ANULADO'
-7. JOINs correctos: pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id
+7. JOINs OBLIGATORIOS: pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id
+8. Puedes usar AS para dar nombres descriptivos a columnas (ej: i.descripcion AS nombre_producto)
+9. La tabla de productos se llama "items", NO "productos"
+10. La tabla de líneas de pedido se llama "lin_pedidos", NO "lineas_pedido"
 
 REGLAS DE SEGURIDAD:
 - Solo puedes generar sentencias de tipo SELECT o SHOW
@@ -60,7 +63,22 @@ SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto_base, SUM(CASE
 ---
 
 Pregunta: Ventas de hoy agrupadas por producto
-SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad, SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario) AS ingresos FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = CURDATE() GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY ingresos DESC;`,
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad, SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario) AS ingresos FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = CURDATE() GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY ingresos DESC;
+
+---
+
+Pregunta: ¿Cuántas ventas hicimos ayer?
+SQL: SELECT COUNT(DISTINCT p.pedido_id) as total_ventas, SUM(lp.total) as total_ingresos FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = DATE_SUB(CURDATE(), INTERVAL 1 DAY);
+
+---
+
+Pregunta: ¿Qué productos se vendieron poco ayer? (menos de 5 unidades)
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS nombre_producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) HAVING cantidad_vendida < 5 ORDER BY cantidad_vendida ASC;
+
+---
+
+Pregunta: Productos con bajas ventas ayer (menos de 3 vendidos)
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS nombre_producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) HAVING cantidad_vendida < 3 ORDER BY cantidad_vendida ASC;`,
         isActive: true
     }
 ];

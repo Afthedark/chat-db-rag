@@ -44,10 +44,17 @@ FORMATO DE RESPUESTA:
     
     // ESTRUCTURA DE BASE DE DATOS - CRÍTICO
     systemPromptParts.push('\n=== ESTRUCTURA DE LA BASE DE DATOS - USAR EXACTAMENTE ESTOS NOMBRES ===');
+    systemPromptParts.push('NOMBRES DE TABLAS PERMITIDAS (USA SOLO ESTAS, NO INVENTES OTRAS):');
+    systemPromptParts.push('- pedidos (tabla principal de pedidos/ventas)');
+    systemPromptParts.push('- lin_pedidos (tabla de líneas/detalle de pedidos, NO usar lineas_pedido)');
+    systemPromptParts.push('- items (tabla de productos/items)');
+    systemPromptParts.push('- clientes (tabla de clientes)');
+    systemPromptParts.push('');
     if (dbDescription) {
+        systemPromptParts.push('DESCRIPCIÓN DETALLADA DEL ESQUEMA:');
         systemPromptParts.push(dbDescription);
     } else {
-        systemPromptParts.push('No se proporcionó descripción de la base de datos.');
+        systemPromptParts.push('ADVERTENCIA: No se proporcionó descripción detallada del esquema.');
     }
     
     // Ejemplos SQL
@@ -57,14 +64,18 @@ FORMATO DE RESPUESTA:
         systemPromptParts.push('\n=== FIN EJEMPLOS ===');
     }
     
-    systemPromptParts.push(`\n=== REGLAS ESTRICTAS Y OBLIGATORIAS ===
-1. USA EXACTAMENTE los nombres de tablas y columnas definidos en la ESTRUCTURA DE BASE DE DATOS arriba
-2. Para buscar productos: usa LOWER(i.descripcion) LIKE '%termino%'
-3. Para cantidades: usa CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END
-4. SIEMPRE excluye pedidos ANULADOS: WHERE p.estado != 'ANULADO'
-5. JOINs correctos: pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id
-6. Responde ÚNICAMENTE con la consulta SQL pura, sin markdown, sin explicaciones
-7. Solo comandos SELECT permitidos`);
+    systemPromptParts.push(`\n=== REGLAS ESTRICTAS Y OBLIGATORIAS - OBLIGATORIO CUMPLIR ===
+1. USA EXACTAMENTE los nombres de tablas y columnas definidos en la ESTRUCTURA DE BASE DE DATOS arriba - NO INVENTES NOMBRES
+2. Las tablas disponibles son: pedidos, lin_pedidos, items, clientes - USA SOLO ESTAS
+3. Para buscar productos: usa LOWER(i.descripcion) LIKE '%termino%'
+4. Para cantidades: usa CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END
+5. SIEMPRE excluye pedidos ANULADOS: WHERE p.estado != 'ANULADO'
+6. JOINs OBLIGATORIOS: pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id
+7. SINTAXIS MySQL OBLIGATORIA: Usa CURDATE() para fecha actual, DATE_SUB(CURDATE(), INTERVAL 1 DAY) para ayer - NO uses DATE('now') que es SQLite
+8. Responde ÚNICAMENTE con la consulta SQL pura, sin markdown, sin explicaciones
+9. Solo comandos SELECT permitidos
+10. VERIFICA que cada nombre de tabla y columna exista en la ESTRUCTURA antes de usarlo
+11. COPIA la sintaxis exacta de los ejemplos proporcionados arriba`);
 
     const finalPrompt = {
         systemPrompt: systemPromptParts.join('\n'),

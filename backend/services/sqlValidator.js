@@ -53,7 +53,39 @@ const validate = (sql) => {
         };
     }
 
-    // 5. Garantizar límite de filas (LIMIT) si es un SELECT (opcional pero recomendado)
+    // 5. Verificar nombres de tablas comunes incorrectos (solo en FROM y JOIN)
+    const commonWrongTables = [
+        { wrong: 'lineas_pedido', correct: 'lin_pedidos' },
+        { wrong: 'linea_pedido', correct: 'lin_pedidos' }
+    ];
+    
+    // Extraer solo la parte de tablas (FROM y JOINs) para validar
+    // Buscar FROM tabla o JOIN tabla
+    const fromJoinRegex = /\b(FROM|JOIN)\s+(\w+)/gi;
+    let match;
+    while ((match = fromJoinRegex.exec(cleanSQL)) !== null) {
+        const tableName = match[2].toLowerCase();
+        for (const { wrong, correct } of commonWrongTables) {
+            if (tableName === wrong.toLowerCase()) {
+                return { 
+                    isValid: false, 
+                    cleanSQL: '', 
+                    error: `Nombre de tabla incorrecto: '${wrong}'. La tabla correcta es '${correct}'. Por favor, verifica el esquema de la base de datos.` 
+                };
+            }
+        }
+    }
+    
+    // 5b. Verificar sintaxis SQLite (incorrecta para MySQL)
+    if (cleanSQL.includes("DATE('now')")) {
+        return { 
+            isValid: false, 
+            cleanSQL: '', 
+            error: `Sintaxis incorrecta: DATE('now') es de SQLite. Usa CURDATE() para MySQL.` 
+        };
+    }
+
+    // 6. Garantizar límite de filas (LIMIT) si es un SELECT (opcional pero recomendado)
     if (upperSQL.startsWith('SELECT') && !upperSQL.includes('LIMIT')) {
         // Un poco arriesgado parsear SQL complejo, pero para casos simples agrega protección
         cleanSQL += ' LIMIT 1000';

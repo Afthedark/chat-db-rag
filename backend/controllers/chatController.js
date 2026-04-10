@@ -77,6 +77,14 @@ const handleChat = async (req, res, next) => {
         }
 
         // ================= PASO 1: Generación de SQL =================
+        console.log('=== DB CONFIG DEBUG ===');
+        console.log('Connection ID:', dbConfig.id);
+        console.log('Connection Name:', dbConfig.name);
+        console.log('Description exists:', !!dbConfig.description);
+        console.log('Description length:', dbConfig.description ? dbConfig.description.length : 0);
+        console.log('Description preview:', dbConfig.description ? dbConfig.description.substring(0, 200) + '...' : 'EMPTY');
+        console.log('=======================');
+        
         const { systemPrompt: sqlSystemPrompt, userPrompt: sqlUserPrompt } = await promptBuilder.buildSQLPrompt(question, dbConfig.description);
         
         // ... (rest of the SQL flow remains the same, but within the controller)
