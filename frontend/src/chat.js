@@ -1,16 +1,16 @@
-window.chatApp = function() {
+window.chatApp = function () {
     return {
         // --- UI STATE ---
         isSidebarOpen: false,
         isLoading: false,
         currentChatId: null,
         theme: 'dark', // 'light' or 'dark'
-        
+
         // --- DATA ---
         chats: [],
         messages: [],
         activeDatabases: [],
-        
+
         // --- FORM ---
         question: '',
         selectedDatabaseId: '',
@@ -18,17 +18,17 @@ window.chatApp = function() {
 
         async init() {
             console.log('🚀 Chat RAG Model Initialized (Deep Chat Integration)');
-            
+
             await this.loadActiveDatabases();
             await this.loadChats();
             await this.loadSystemInfo();
-            
+
             // Cargar Tema desde Utils
             this.theme = UIUtils.initTheme();
-            
+
             this.setupDeepChat();
-            
-            
+
+
             this.$watch('selectedDatabaseId', (val) => {
                 console.log('🔄 DB Selection Changed:', val);
                 this.$nextTick(() => {
@@ -51,11 +51,11 @@ window.chatApp = function() {
             const isDark = this.theme === 'dark';
 
             // Colores del sistema de diseño
-            const inputBg     = isDark ? '#2a2a2a' : '#f5f5f7';
-            const inputText   = isDark ? '#ececec' : '#1d1d1f';
+            const inputBg = isDark ? '#2a2a2a' : '#f5f5f7';
+            const inputText = isDark ? '#ececec' : '#1d1d1f';
             const inputBorder = isDark ? '1px solid #3c3c3c' : '1px solid #d2d2d7';
             const focusBorder = isDark ? '2px solid #3b82f6' : '2px solid #007aff';
-            const phColor     = isDark ? '#6b7280' : '#9ca3af';
+            const phColor = isDark ? '#6b7280' : '#9ca3af';
 
             return {
                 // ✅ Formato oficial Deep Chat: styles anidados
@@ -104,8 +104,8 @@ window.chatApp = function() {
 
                 // Nombres en español
                 names: {
-                    ai:   { text: 'Asistente IA', style: { color: isDark ? '#60a5fa' : '#007aff', fontWeight: '600' } },
-                    user: { text: 'T\u00fa',           style: { color: isDark ? '#8b949e' : '#6b7280' } }
+                    ai: { text: 'Asistente IA', style: { color: isDark ? '#60a5fa' : '#007aff', fontWeight: '600' } },
+                    user: { text: 'T\u00fa', style: { color: isDark ? '#8b949e' : '#6b7280' } }
                 },
 
                 // Estilos de burbuja
@@ -213,11 +213,11 @@ window.chatApp = function() {
             if (!chatEl) return;
 
             const cfg = this.getDeepChatConfig();
-            chatEl.textInput         = cfg.textInput;
-            chatEl.names             = cfg.names;
-            chatEl.messageStyles     = cfg.messageStyles;
+            chatEl.textInput = cfg.textInput;
+            chatEl.names = cfg.names;
+            chatEl.messageStyles = cfg.messageStyles;
             chatEl.submitButtonStyles = cfg.submitButtonStyles;
-            chatEl.auxiliaryStyle    = cfg.auxiliaryStyle;
+            chatEl.auxiliaryStyle = cfg.auxiliaryStyle;
         },
 
         async sendToAPI(question, signals) {
@@ -240,7 +240,7 @@ window.chatApp = function() {
                     const isNewChat = !this.currentChatId;
                     this.currentChatId = res.data.historyId;
                     localStorage.setItem('last_chat_id', this.currentChatId);
-                    
+
                     if (res.data.sqlExecuted) {
                         let htmlContent = this.formatMessage(res.data.reply);
                         htmlContent += `
@@ -259,7 +259,7 @@ window.chatApp = function() {
                     } else {
                         signals.onResponse({ text: res.data.reply });
                     }
-                    
+
                     // Actualización optimista: Si es un nuevo chat, lo añadimos al inicio de la lista
                     if (isNewChat) {
                         this.chats.unshift({
@@ -268,7 +268,7 @@ window.chatApp = function() {
                             databaseId: parseInt(this.selectedDatabaseId)
                         });
                     }
-                    
+
                     // Actualizar el historial completo en segundo plano
                     this.loadChats();
                 }
@@ -321,14 +321,14 @@ window.chatApp = function() {
             this.messages = [];
             this.selectedDatabaseId = '';
             this.isLoading = false;
-            
+
             localStorage.removeItem('last_chat_id');
             const chatEl = document.getElementById('rag-deep-chat');
             if (chatEl) {
                 chatEl.clearMessages(true);
                 chatEl.history = []; // Asegurar limpieza total del componente
             }
-            
+
             // Disparar modal de selección
             await this.promptDatabaseSelection();
         },
@@ -362,7 +362,7 @@ window.chatApp = function() {
                 // aunque Alpine suele manejar ambos.
                 this.selectedDatabaseId = dbId.toString();
                 this.showToast(`Conectado a ${dbOptions[dbId]}`, 'success');
-                
+
                 // Pequeño delay para que el input se habilite suavemente
                 setTimeout(() => {
                     const chatEl = document.getElementById('rag-deep-chat');
@@ -378,7 +378,7 @@ window.chatApp = function() {
                 const res = await axios.get(`/api/chat/${chatId}/messages`);
                 if (res.data.success) {
                     this.messages = res.data.data;
-                    
+
                     // Recover DB context
                     const chatObj = this.chats.find(c => c.id == chatId);
                     if (chatObj && chatObj.databaseId) {
@@ -407,7 +407,7 @@ window.chatApp = function() {
                             }
                             return content;
                         });
-                        
+
                         chatEl.clearMessages(true); // Limpia los mensajes en pantalla antes de poblar
                         chatEl.history = history;
                     }
