@@ -219,38 +219,47 @@ p {
     border-left: 0;
 }
 
-/* Theme Toggle Button in Sidebar */
-.theme-toggle-btn {
-    display: flex;
+/* ============================================
+   Theme Toggle Icon Button (Discrete)
+   ============================================ */
+.theme-icon-btn {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    padding: 0.625rem 1rem;
-    border: 1px solid var(--c-border);
-    border-radius: 0.5rem;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
     background: transparent;
-    color: var(--c-text-2);
-    font-size: 0.875rem;
-    transition: all var(--transition-speed) var(--transition-smooth);
+    color: var(--c-text-3);
+    font-size: 1.05rem;
+    border-radius: 50%;
     cursor: pointer;
-    width: 100%;
+    transition: all var(--transition-speed) var(--transition-smooth);
+    position: relative;
 }
 
-.theme-toggle-btn:hover {
+.theme-icon-btn:hover {
     background: var(--bg-elevated);
-    border-color: var(--c-border-hover);
     color: var(--c-text-1);
+    transform: rotate(30deg);
 }
 
-.theme-toggle-btn:active {
-    transform: scale(0.98);
+.theme-icon-btn:active {
+    transform: scale(0.9);
 }
 
-.theme-toggle-btn i {
-    font-size: 1rem;
+.theme-icon-btn i {
+    transition: transform 0.4s var(--transition-bounce);
 }
 
-/* Sidebar Navigation - Enhanced */
+.theme-icon-btn.theme-rotating i {
+    transform: rotate(360deg);
+}
+
+/* ============================================
+   Sidebar Navigation - Enhanced
+   ============================================ */
 .btn-custom {
     color: var(--c-text-2) !important;
     padding: 0.75rem 1rem;
@@ -531,28 +540,155 @@ main.main-panel {
     background-color: var(--bg-main) !important;
 }
 
-/* Database Selector Styling */
-select.form-select {
+/* ============================================
+   Database Selector Pill
+   ============================================ */
+.db-selector-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.db-selector-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--c-primary);
+    font-size: 0.85rem;
+    pointer-events: none;
+    z-index: 1;
+    transition: all var(--transition-speed) var(--transition-smooth);
+}
+
+/* Icon animation when DB is selected */
+.db-selector-wrapper:has(.db-selector-pill:not(.placeholder):not(:disabled)) .db-selector-icon {
+    color: var(--c-success);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.db-selector-pill {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding: 6px 32px 6px 32px;
+    min-width: 140px;
+    max-width: 200px;
+    height: 34px;
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    background-color: var(--bg-darker);
     color: var(--c-text-1);
-    background-color: transparent;
-    border: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
     cursor: pointer;
+    transition: all var(--transition-speed) var(--transition-smooth);
+    /* Custom dropdown arrow (SVG data URI) */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 4.5L6 8L9.5 4.5' stroke='%23a1a1aa' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
 }
 
-select.form-select:focus {
+.db-selector-pill:hover:not(:disabled) {
+    border-color: var(--c-primary);
+    background-color: var(--bg-elevated);
+    box-shadow: 0 0 0 3px var(--c-primary-glow);
+}
+
+.db-selector-pill:hover:not(:disabled) + .db-selector-icon,
+.db-selector-wrapper:hover .db-selector-icon {
+    color: var(--c-primary-hover);
+}
+
+.db-selector-pill:focus {
     outline: none;
-    box-shadow: none;
+    border-color: var(--c-primary);
+    box-shadow: 0 0 0 3px var(--c-primary-glow);
 }
 
-select.form-select option {
+/* Disabled state with lock icon */
+.db-selector-pill:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    color: var(--c-text-3);
+    background-color: var(--bg-main);
+    border-style: solid;
+    border-color: var(--c-border);
+    padding-right: 44px; /* Make room for lock icon */
+    background-image: none; /* Remove default arrow when disabled */
+}
+
+/* Lock indicator styling */
+.db-selector-wrapper .bi-lock-fill {
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Disabled state - change icon color */
+.db-selector-pill:disabled + .db-selector-icon,
+.db-selector-wrapper:has(.db-selector-pill:disabled) .db-selector-icon {
+    color: var(--c-text-3);
+}
+
+/* Show selected DB name with better styling */
+.db-selector-pill:not(.placeholder) {
+    font-weight: 600;
+    color: var(--c-primary);
+}
+
+/* Selected state with checkmark indicator */
+.db-selector-pill:not(.placeholder):not(:disabled) {
+    border-color: var(--c-primary);
+    background-color: var(--bg-darker);
+}
+
+/* Options styling */
+.db-selector-pill option {
     background-color: var(--bg-panel);
     color: var(--c-text-1);
-    padding: 8px;
+    padding: 10px 14px;
+    font-size: 0.875rem;
+    font-weight: 500;
 }
 
-select.form-select:disabled {
-    color: var(--c-text-3);
-    cursor: not-allowed;
+/* Hide disabled placeholder option in dropdown */
+.db-selector-pill option:disabled,
+.db-selector-pill option[value=""] {
+    display: none;
+}
+
+/* Style for the dropdown when open */
+.db-selector-pill:focus option {
+    background-color: var(--bg-panel);
+}
+
+/* Hover effect for options (works in some browsers) */
+.db-selector-pill option:hover {
+    background-color: var(--c-primary) !important;
+    color: white !important;
+}
+
+/* Placeholder state (when no DB selected) */
+.db-selector-pill.placeholder {
+    color: var(--c-text-2);
+    border-color: var(--c-border-hover);
+    background-color: var(--bg-panel);
+    border-style: dashed;
+}
+
+.db-selector-pill.placeholder option {
+    color: var(--c-text-1);
+}
+
+/* Dark theme arrow override */
+[data-bs-theme='dark'] .db-selector-pill {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 4.5L6 8L9.5 4.5' stroke='%23a1a1aa' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+[data-bs-theme='dark'] .db-selector-pill:disabled {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Crect x='3' y='5' width='6' height='5' rx='1' stroke='%2371717a' stroke-width='1.2'/%3E%3Cpath d='M4.5 5V3.5C4.5 2.67 5.17 2 6 2C6.83 2 7.5 2.67 7.5 3.5V5' stroke='%2371717a' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
 /* Enhanced Input Container */

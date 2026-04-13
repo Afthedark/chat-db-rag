@@ -103,18 +103,10 @@
                 </ul>
             </div>
 
-            <!-- Sidebar Footer: New Chat + Theme Toggle -->
+            <!-- Sidebar Footer: New Chat -->
             <div class="mt-auto border-top border-secondary border-opacity-10 p-3">
-                <button class="btn btn-outline-primary w-100 rounded-pill py-2 shadow mb-3" @click="newChat()">
+                <button class="btn btn-outline-primary w-100 rounded-pill py-2 shadow" @click="newChat()">
                     <i class="bi bi-plus-lg me-1"></i> Nuevo Chat
-                </button>
-                
-                <!-- Theme Toggle -->
-                <button @click="toggleTheme()" 
-                    class="theme-toggle-btn"
-                    :title="theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
-                    <i class="bi" :class="theme === 'dark' ? 'bi-sun-fill text-warning' : 'bi-moon-stars-fill text-primary'"></i>
-                    <span x-text="theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'"></span>
                 </button>
             </div>
         </aside>
@@ -130,20 +122,26 @@
                     
                     <!-- Left: DB Selector + New Chat -->
                     <div class="d-flex align-items-center gap-2 gap-md-3 flex-shrink-0">
-                        <span class="badge border border-secondary border-opacity-25 px-2 px-md-3 py-2 d-flex align-items-center gap-2"
-                            style="background: var(--bg-darker); border-radius: 12px;">
-                            <i class="bi bi-database-fill text-primary"></i>
-                            <select x-model="selectedDatabaseId" :disabled="currentChatId !== null"
-                                :class="currentChatId !== null ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'"
-                                class="form-select form-select-sm bg-transparent border-0 fw-medium p-0 pe-4 shadow-none"
-                                style="width: auto; min-width: 120px; max-width: 180px; color: var(--c-text-1);"
-                                :style="`width: auto; min-width: 120px; max-width: 180px; color: ${currentChatId !== null ? 'var(--c-text-3)' : 'var(--c-text-1)'};`">
-                                <option value="" disabled selected>Selecciona DB...</option>
+                        <!-- Database Selector Pill -->
+                        <div class="db-selector-wrapper" 
+                             :title="currentChatId ? 'Base de datos bloqueada - Inicia un nuevo chat para cambiar' : 'Seleccionar base de datos'">
+                            <i class="bi bi-database-fill db-selector-icon"
+                               :class="{ 'bi-database-fill': !currentChatId, 'bi-lock-fill': currentChatId }"></i>
+                            <select x-model="selectedDatabaseId"
+                                    :disabled="currentChatId !== null"
+                                    :class="{ 'placeholder': !selectedDatabaseId }"
+                                    class="db-selector-pill"
+                                    aria-label="Seleccionar base de datos">
+                                <option value="" disabled hidden>Selecciona DB...</option>
                                 <template x-for="db in activeDatabases" :key="db.id">
-                                    <option :value="db.id" x-text="db.name" style="background: var(--bg-panel); color: var(--c-text-1);"></option>
+                                    <option :value="db.id" x-text="db.name"></option>
                                 </template>
                             </select>
-                        </span>
+                            <!-- Locked indicator -->
+                            <i x-show="currentChatId" 
+                               class="bi bi-lock-fill position-absolute text-warning" 
+                               style="right: 28px; top: 50%; transform: translateY(-50%); font-size: 0.7rem;"></i>
+                        </div>
                         <button x-show="currentChatId"
                             class="btn btn-sm btn-outline-secondary border-opacity-25 rounded-pill px-2 px-md-3 fade-in d-none d-sm-inline-block"
                             @click="newChat()">
@@ -157,8 +155,16 @@
                         </button>
                     </div>
 
-                    <!-- Right: System Info -->
+                    <!-- Right: Theme Toggle + System Info -->
                     <div class="d-flex align-items-center gap-2 ms-auto">
+                        <!-- Theme Toggle (Discrete Icon) -->
+                        <button @click="toggleTheme()"
+                            class="theme-icon-btn"
+                            :title="theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+                            :aria-label="theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
+                            <i class="bi" :class="theme === 'dark' ? 'bi-sun-fill' : 'bi-moon-stars-fill'"></i>
+                        </button>
+
                         <div class="d-flex align-items-center gap-1 gap-md-2 px-2 py-1 rounded-pill border border-secondary border-opacity-25 shadow-sm"
                             style="font-size: 0.7rem; background: var(--bg-darker) !important;">
                             <span :class="systemInfo.aiProvider === 'ollama' ? 'text-warning' : 'text-info'">

@@ -11,7 +11,9 @@ Interfaz de usuario del sistema RAG de dos pasos. Arquitectura MPA (Multi-Page A
 ├── index.html          # Página principal del Chat RAG (Deep Chat)
 ├── rules.html          # Panel de administración de Reglas IA
 ├── databases.html      # Panel de administración de Conexiones SQL
-├── style.css           # Sistema de diseño global (Design System)
+├── styles/
+│   ├── base.css          # Variables, desktop layout, componentes, animaciones
+│   └── mobile.css        # Overrides para pantallas <768px
 ├── deepchat.md         # Referencia técnica del componente Deep Chat
 └── /src
     ├── chat.js         # Controlador Alpine.js del chat
@@ -22,9 +24,9 @@ Interfaz de usuario del sistema RAG de dos pasos. Arquitectura MPA (Multi-Page A
 
 ---
 
-## 🎨 Design System (`style.css`)
+## 🎨 Design System (`styles/base.css`)
 
-El sistema de diseño está basado en **variables CSS** que responden dinámicamente al atributo `data-bs-theme` de Bootstrap 5.
+El sistema de diseño está basado en **variables CSS** que responden dinámicamente al atributo `data-bs-theme` de Bootstrap 5. Los estilos desktop están en `styles/base.css` y los overrides mobile en `styles/mobile.css`.
 
 ### Tokens de Color
 
@@ -43,7 +45,7 @@ El sistema de diseño está basado en **variables CSS** que responden dinámicam
 ### Para agregar un color nuevo:
 
 ```css
-/* En style.css */
+/* En styles/base.css */
 [data-bs-theme='dark']  { --mi-nuevo-color: #valor-oscuro; }
 [data-bs-theme='light'] { --mi-nuevo-color: #valor-claro; }
 ```

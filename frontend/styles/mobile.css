@@ -119,9 +119,30 @@
         font-size: 0.7rem !important;
         padding: 0.25rem 0.5rem !important;
     }
-    
+
     .chat-viewport .rounded-pill .text-truncate {
         max-width: 80px !important;
+    }
+
+    /* Theme toggle icon mobile */
+    .theme-icon-btn {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 0.95rem !important;
+    }
+
+    /* Database selector pill mobile */
+    .db-selector-pill {
+        min-width: 120px !important;
+        max-width: 160px !important;
+        height: 32px !important;
+        font-size: 0.75rem !important;
+        padding: 5px 28px 5px 28px !important;
+    }
+
+    .db-selector-icon {
+        font-size: 0.75rem !important;
+        left: 8px !important;
     }
     
     /* New chat button mobile */

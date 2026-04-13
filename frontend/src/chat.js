@@ -44,7 +44,45 @@ window.chatApp = function () {
 
         toggleTheme() {
             this.theme = UIUtils.toggleTheme();
-            this.$nextTick(() => this.applyDeepChatTheme());
+            
+            // Add rotation animation to theme button
+            const themeBtn = document.querySelector('.theme-icon-btn');
+            if (themeBtn) {
+                themeBtn.classList.add('theme-rotating');
+                setTimeout(() => themeBtn.classList.remove('theme-rotating'), 500);
+            }
+            
+            // Preserve scroll position and focus before applying theme
+            const chatEl = document.getElementById('rag-deep-chat');
+            const chatContainer = document.querySelector('.deep-chat-messages');
+            const scrollPos = chatContainer ? chatContainer.scrollTop : 0;
+            const scrollHeight = chatContainer ? chatContainer.scrollHeight : 0;
+            const activeEl = document.activeElement;
+            const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') && activeEl.closest('deep-chat');
+            
+            this.$nextTick(() => {
+                this.applyDeepChatTheme();
+                
+                // Restore scroll position after theme change
+                requestAnimationFrame(() => {
+                    if (chatContainer) {
+                        // If user was at bottom, keep them at bottom; otherwise restore position
+                        const wasAtBottom = Math.abs(scrollHeight - scrollPos - chatContainer.clientHeight) < 50;
+                        if (wasAtBottom) {
+                            chatContainer.scrollTop = chatContainer.scrollHeight;
+                        } else {
+                            chatContainer.scrollTop = scrollPos;
+                        }
+                    }
+                    
+                    // Restore focus to input if it was focused
+                    if (isInputFocused && chatEl) {
+                        setTimeout(() => {
+                            if (chatEl.focus) chatEl.focus();
+                        }, 100);
+                    }
+                });
+            });
         },
 
         getDeepChatConfig() {
@@ -210,14 +248,22 @@ window.chatApp = function () {
         // Asigna propiedades de Deep Chat directamente al DOM (método correcto, evita serializar JS)
         applyDeepChatTheme() {
             const chatEl = document.getElementById('rag-deep-chat');
-            if (!chatEl) return;
+            if (!chatEl) {
+                console.warn('⚠️ Deep Chat element not found, skipping theme apply');
+                return;
+            }
 
-            const cfg = this.getDeepChatConfig();
-            chatEl.textInput = cfg.textInput;
-            chatEl.names = cfg.names;
-            chatEl.messageStyles = cfg.messageStyles;
-            chatEl.submitButtonStyles = cfg.submitButtonStyles;
-            chatEl.auxiliaryStyle = cfg.auxiliaryStyle;
+            try {
+                const cfg = this.getDeepChatConfig();
+                chatEl.textInput = cfg.textInput;
+                chatEl.names = cfg.names;
+                chatEl.messageStyles = cfg.messageStyles;
+                chatEl.submitButtonStyles = cfg.submitButtonStyles;
+                chatEl.auxiliaryStyle = cfg.auxiliaryStyle;
+                console.log('🎨 Deep Chat theme applied successfully');
+            } catch (error) {
+                console.error('Error applying Deep Chat theme:', error);
+            }
         },
 
         async sendToAPI(question, signals) {
