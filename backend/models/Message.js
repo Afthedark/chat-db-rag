@@ -19,7 +19,29 @@ module.exports = (sequelize, DataTypes) => {
         chatId: {
             type: DataTypes.INTEGER,
             allowNull: false
+        },
+        tokenUsage: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            comment: 'Estimated token usage for this message'
+        },
+        embedding: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            comment: 'JSON array of embedding vector (if generated)'
+        },
+        isSummarized: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+            comment: 'Whether this message was part of a summary'
         }
+    }, {
+        indexes: [
+            { fields: ['chatId'] },
+            { fields: ['createdAt'] },
+            { fields: ['role'] },
+            { fields: ['databaseUsed'] }
+        ]
     });
     return Message;
 };

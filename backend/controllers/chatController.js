@@ -1,9 +1,11 @@
-const { Chat, Message, DatabaseConnection } = require('../models');
+const { Chat, Message, DatabaseConnection, SQLCache } = require('../models');
 const { AppError } = require('../middleware/errorHandler');
 const promptBuilder = require('../services/promptBuilder');
 const aiService = require('../services/aiService');
 const sqlValidator = require('../services/sqlValidator');
 const dbManager = require('../services/dbManager');
+const memoryManager = require('../services/memoryManager');
+const embeddingService = require('../services/embeddingService');
 
 const handleChat = async (req, res, next) => {
     try {
@@ -26,18 +28,20 @@ const handleChat = async (req, res, next) => {
         if (!currentChatId) {
             let title = question.substring(0, 30);
             if (question.length > 30) title += '...';
-            const newChat = await Chat.create({ 
-                title, 
-                databaseId: targetDbId 
+            const newChat = await Chat.create({
+                title,
+                databaseId: targetDbId
             });
             currentChatId = newChat.id;
         }
 
-        // Save User Message
+        // Save User Message with embedding
+        const questionEmbedding = embeddingService.generateSimpleEmbedding(question);
         await Message.create({
             chatId: parseInt(currentChatId),
             role: 'user',
-            content: question
+            content: question,
+            embedding: JSON.stringify(questionEmbedding)
         });
 
         // ================= PASO 0: Clasificación de Intención =================
@@ -50,14 +54,28 @@ const handleChat = async (req, res, next) => {
         console.log(`🎯 Intención detectada: ${intent.trim()}`);
 
         if (intent.trim().toUpperCase() === 'GENERAL') {
-            // RECUPERAR HISTORIAL PARA CONTEXTO
+            // IMPROVEMENT A: Dynamic history limit
+            const messageCount = await Message.count({ where: { chatId: currentChatId } });
+            const historyLimit = memoryManager.getDynamicHistoryLimit(messageCount, intent);
+            
             const history = await Message.findAll({
                 where: { chatId: currentChatId },
                 order: [['createdAt', 'DESC']],
-                limit: 6
+                limit: historyLimit
             });
+
+            // IMPROVEMENT D: Summarization for long conversations
+            const summary = await memoryManager.summarizeConversation(
+                history.reverse(),
+                15
+            );
+
+            const { systemPrompt: genSystem, userPrompt: genUser } = await promptBuilder.buildGeneralChatPrompt(
+                question, 
+                summary ? summary.recentMessages : history.reverse(),
+                summary
+            );
             
-            const { systemPrompt: genSystem, userPrompt: genUser } = await promptBuilder.buildGeneralChatPrompt(question, history.reverse());
             const generalReply = await aiService.generateResponse([
                 { role: 'system', content: genSystem },
                 { role: 'user', content: genUser }
@@ -76,6 +94,58 @@ const handleChat = async (req, res, next) => {
             });
         }
 
+        // ================= IMPROVEMENT C: Check SQL Cache =================
+        const cachedSQL = await memoryManager.checkSQLCache(question, targetDbId);
+        
+        if (cachedSQL) {
+            console.log(`⚡ Using cached SQL for: ${question.substring(0, 50)}...`);
+            
+            // Execute cached query
+            let queryResults;
+            try {
+                const executed = await dbManager.executeQuery(targetDbId, cachedSQL.sqlQuery);
+                queryResults = executed.rows;
+            } catch (error) {
+                console.log('⚠️ Cached SQL failed, regenerating:', error.message);
+                // Fall through to normal generation
+            }
+            
+            if (queryResults) {
+                // Build business response from cached results
+                const { systemPrompt: busSystemPrompt, userPrompt: busUserPrompt } = 
+                    await promptBuilder.buildBusinessPrompt(question, queryResults, cachedSQL.sqlQuery);
+
+                let finalReply;
+                try {
+                    finalReply = await aiService.generateResponse([
+                        { role: 'system', content: busSystemPrompt },
+                        { role: 'user', content: busUserPrompt }
+                    ]);
+                } catch (error) {
+                    finalReply = `Datos recuperados del caché exitosamente.`;
+                }
+
+                await Message.create({
+                    chatId: parseInt(currentChatId),
+                    role: 'assistant',
+                    content: finalReply,
+                    sqlExecuted: cachedSQL.sqlQuery,
+                    databaseUsed: dbConfig.name
+                });
+
+                // Infer preferences
+                await memoryManager.inferPreferences(currentChatId, question, cachedSQL.sqlQuery);
+
+                return res.json({
+                    success: true,
+                    reply: finalReply,
+                    sqlExecuted: cachedSQL.sqlQuery,
+                    historyId: parseInt(currentChatId),
+                    fromCache: true
+                });
+            }
+        }
+
         // ================= PASO 1: Generación de SQL =================
         console.log('=== DB CONFIG DEBUG ===');
         console.log('Connection ID:', dbConfig.id);
@@ -84,17 +154,16 @@ const handleChat = async (req, res, next) => {
         console.log('Description length:', dbConfig.description ? dbConfig.description.length : 0);
         console.log('Description preview:', dbConfig.description ? dbConfig.description.substring(0, 200) + '...' : 'EMPTY');
         console.log('=======================');
-        
+
         const { systemPrompt: sqlSystemPrompt, userPrompt: sqlUserPrompt } = await promptBuilder.buildSQLPrompt(question, dbConfig.description);
-        
-        // ... (rest of the SQL flow remains the same, but within the controller)
+
         let rawSQLResponse;
         try {
             rawSQLResponse = await aiService.generateResponse([
                 { role: 'system', content: sqlSystemPrompt },
                 { role: 'user', content: sqlUserPrompt }
             ]);
-            
+
             // Debug: log de la respuesta de la IA
             console.log('=== IA RESPONSE DEBUG ===');
             console.log('Raw SQL Response:', rawSQLResponse);
@@ -113,11 +182,11 @@ const handleChat = async (req, res, next) => {
                 content: replyMsg,
                 databaseUsed: dbConfig.name
             });
-            return res.json({ 
-                success: true, 
+            return res.json({
+                success: true,
                 reply: replyMsg,
-                sqlExecuted: rawSQLResponse, 
-                historyId: parseInt(currentChatId) 
+                sqlExecuted: rawSQLResponse,
+                historyId: parseInt(currentChatId)
             });
         }
 
@@ -128,12 +197,20 @@ const handleChat = async (req, res, next) => {
         try {
             const executed = await dbManager.executeQuery(targetDbId, cleanSQL);
             queryResults = executed.rows;
+            
+            // IMPROVEMENT C: Save successful SQL to cache
+            await memoryManager.saveToSQLCache(
+                question, 
+                cleanSQL, 
+                targetDbId, 
+                queryResults.slice(0, 5) // Save preview of first 5 rows
+            );
         } catch (error) {
              console.log('=== SQL EXECUTION ERROR ===');
              console.log('Error:', error.message);
              console.log('SQL:', cleanSQL);
              console.log('===========================');
-             
+
              const errorMsgStatus = `🔥 Error en la base de datos: ${error.message}`;
              await Message.create({
                 chatId: parseInt(currentChatId),
@@ -152,7 +229,7 @@ const handleChat = async (req, res, next) => {
 
         // ================= PASO 2: Interpretación de datos =================
         const { systemPrompt: busSystemPrompt, userPrompt: busUserPrompt } = await promptBuilder.buildBusinessPrompt(question, queryResults, cleanSQL);
-        
+
         let finalReply;
         try {
             finalReply = await aiService.generateResponse([
@@ -172,11 +249,15 @@ const handleChat = async (req, res, next) => {
             databaseUsed: dbConfig.name
         });
 
+        // IMPROVEMENT E: Infer user preferences from patterns
+        await memoryManager.inferPreferences(currentChatId, question, cleanSQL);
+
         res.json({
             success: true,
             reply: finalReply,
             sqlExecuted: cleanSQL,
-            historyId: parseInt(currentChatId)
+            historyId: parseInt(currentChatId),
+            fromCache: false
         });
 
     } catch (error) {

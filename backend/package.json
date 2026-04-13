@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "seed": "node seeds/initialRules.js"
+    "seed": "node seeds/initialRules.js",
+    "migrate:memory": "node seeds/enhancedMemoryMigration.js",
+    "seed:keywords": "node seeds/populateRuleKeywords.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

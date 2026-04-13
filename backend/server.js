@@ -9,6 +9,8 @@ const { errorHandler } = require('./middleware/errorHandler');
 const chatRoutes = require('./routes/chatRoutes');
 const rulesRoutes = require('./routes/rulesRoutes');
 const databaseRoutes = require('./routes/databaseRoutes');
+const cacheRoutes = require('./routes/cacheRoutes');
+const preferenceRoutes = require('./routes/preferenceRoutes');
 
 const app = express();
 
@@ -19,6 +21,8 @@ app.use(express.json());
 app.use('/api/chat', chatRoutes);
 app.use('/api/rules', rulesRoutes);
 app.use('/api/databases', databaseRoutes);
+app.use('/api/cache', cacheRoutes);
+app.use('/api/preferences', preferenceRoutes);
 
 // Frontend static serving
 app.use(express.static(path.join(__dirname, '../frontend')));
@@ -38,6 +42,13 @@ app.get('/api/system/info', (req, res) => {
         aiProvider: process.env.AI_PROVIDER || 'ollama',
         model: process.env.AI_PROVIDER === 'openrouter' ? process.env.OPENROUTER_MODEL : process.env.OLLAMA_MODEL
     });
+});
+
+// Cache management endpoint (utility)
+app.post('/api/system/cache/cleanup', async (req, res) => {
+    const memoryManager = require('./services/memoryManager');
+    const deleted = await memoryManager.cleanOldCache(30);
+    res.json({ success: true, message: `Cleaned ${deleted} old cache entries` });
 });
 
 // -----------------------

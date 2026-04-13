@@ -1,4 +1,6 @@
 const { ContextRule } = require('../models');
+const memoryManager = require('./memoryManager');
+const { Op } = require('sequelize');
 
 const fetchActiveRules = async (categories) => {
     const rules = await ContextRule.findAll({
@@ -7,19 +9,38 @@ const fetchActiveRules = async (categories) => {
             category: categories
         }
     });
-    
+
     // Group them by Category
     const grouped = categories.reduce((acc, cat) => {
         acc[cat] = rules.filter(r => r.category === cat).map(r => r.content).join('\n---\n');
         return acc;
     }, {});
-    
+
     return grouped;
 };
 
+/**
+ * NEW: Fetch smart context rules based on question keywords
+ */
+const fetchSmartContextRules = async (question, categories) => {
+    return await memoryManager.getSmartContextRules(question, categories);
+};
+
 const buildSQLPrompt = async (question, dbDescription) => {
-    const rules = await fetchActiveRules(['INSTRUCCIONES', 'EJEMPLOS_SQL']);
-    
+    // Use smart context rules if available, fallback to basic fetch
+    let rules;
+    try {
+        const smartRules = await fetchSmartContextRules(question, ['INSTRUCCIONES', 'EJEMPLOS_SQL']);
+        // Group smart rules by category
+        rules = ['INSTRUCCIONES', 'EJEMPLOS_SQL'].reduce((acc, cat) => {
+            acc[cat] = smartRules.filter(r => r.category === cat).map(r => r.content).join('\n---\n');
+            return acc;
+        }, {});
+    } catch (error) {
+        console.warn('Smart context failed, falling back to basic rules:', error.message);
+        rules = await fetchActiveRules(['INSTRUCCIONES', 'EJEMPLOS_SQL']);
+    }
+
     const systemPromptParts = [];
     
     // Instrucciones base
@@ -136,14 +157,34 @@ REGLAS:
     };
 };
 
-const buildGeneralChatPrompt = async (question, chatHistory = []) => {
+const buildGeneralChatPrompt = async (question, chatHistory = [], summary = null) => {
     const historyContext = chatHistory.map(m => `${m.role === 'user' ? 'Usuario' : 'Asistente'}: ${m.content}`).join('\n');
     
+    let summaryContext = '';
+    if (summary) {
+        summaryContext = `
+=== RESUMEN DE CONVERSACIÓN ANTERIOR ===
+Esta conversación ha sido resumida para mantener el contexto:
+- Bases de datos consultadas: ${summary.summary.databasesQueried.join(', ') || 'Ninguna'}
+- Consultas SQL ejecutadas: ${summary.summary.sqlQueriesExecuted}
+- Temas discutidos: ${summary.summary.topicsDiscussed.join(', ') || 'Varios'}
+
+Este resumen proporciona el contexto de las interacciones anteriores.
+=== FIN DEL RESUMEN ===
+
+`;
+    }
+
     return {
-        systemPrompt: `Eres un asistente de IA empresarial inteligente y amigable. Tu objetivo es ayudar al usuario con dudas generales, explicar tus capacidades (que incluyen consultar bases de datos mediante RAG), o simplemente mantener una conversación fluida. 
-        
-No tienes acceso directo a los datos en este modo, si te piden datos específicos, recuérdales que puedes consultarlos si hacen una pregunta específica sobre ellos.`,
-        userPrompt: `Historial reciente:\n${historyContext}\n\nPregunta actual: ${question}`
+        systemPrompt: `Eres un asistente de IA empresarial inteligente y amigable. Tu objetivo es ayudar al usuario con dudas generales, explicar tus capacidades (que incluyen consultar bases de datos mediante RAG), o simplemente mantener una conversación fluida.
+
+No tienes acceso directo a los datos en este modo, si te piden datos específicos, recuérdales que puedes consultarlos si hacen una pregunta específica sobre ellos.
+
+${summaryContext ? 'IMPORTANTE: Tienes contexto resumido de conversaciones anteriores. Úsalo para mantener coherencia.' : ''}`,
+        userPrompt: `${summaryContext}Historial reciente:
+${historyContext}
+
+Pregunta actual: ${question}`
     };
 };
 
@@ -151,5 +192,6 @@ module.exports = {
     buildSQLPrompt,
     buildBusinessPrompt,
     buildClassifierPrompt,
-    buildGeneralChatPrompt
+    buildGeneralChatPrompt,
+    fetchSmartContextRules
 };
