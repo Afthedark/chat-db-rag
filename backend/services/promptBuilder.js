@@ -135,7 +135,8 @@ Tu trabajo es escribir una respuesta en lenguaje natural para el usuario, basán
 INSTRUCCIONES:
 - Interpreta los datos de forma clara, amigable y muy concisa
 - Utiliza formato de listas o tablas markdown siempre que ayude a estructurar la información cuando haya más de 2 registros devueltos
-- Si hay tendencias o anomalías en la data provista, resáltalas`;
+- Si hay tendencias o anomalías en la data provista, resáltalas
+- IMPORTANTE: Cuando muestres montos de dinero, usa el formato "Bs" (Bolivianos) o el símbolo "$" según el contexto. Si el resultado SQL incluye "Bs" en el valor, presérvalo. Nunca inventes monedas que no aparecen en los datos.`;
 
     // Limit JSON context to prevent context window overflow (safeguard)
     let jsonString = JSON.stringify(sqlResults);

@@ -8,19 +8,20 @@ const rulesSeed = [
         category: 'INSTRUCCIONES',
         content: `REGLA CRITICA PARA CALCULAR TOTALES DE VENTAS:
 
-NUNCA uses SUM(lp.total) - esa columna NO es confiable.
+Para obtener el total de ventas/ingresos, usa directamente la columna 'total' de la tabla 'pedidos'.
+Esta columna ya incluye el monto completo de cada pedido (con y sin factura).
 
-USA SIEMPRE esta formula exacta para calcular ingresos/totales:
-SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario)
+Formula correcta:
+CONCAT(ROUND(SUM(total), 2), ' Bs')
 
-Explicacion:
-- cant_total: cantidad final despues de ajustes (prioridad si > 0)
-- cantidad: cantidad original del pedido
-- precio_unitario: precio de venta del item
-- Multiplica cantidad * precio_unitario para obtener el total real
+IMPORTANTE:
+- La tabla 'pedidos' tiene la columna 'total' que ya contiene el monto final de cada venta
+- NO es necesario hacer JOIN con lin_pedidos para calcular totales agregados
+- Al buscar directamente en pedidos, se incluyen automaticamente todas las ventas (con y sin factura)
+- Esto garantiza que el ingreso total sea el 100% real
 
-Para mostrar el resultado formateado:
-CONCAT(ROUND(SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario), 2), ' Bs')`,
+Ejemplo:
+SELECT CONCAT(ROUND(SUM(total), 2), ' Bs') AS ingresos_totales FROM pedidos WHERE estado != 'ANULADO' AND MONTH(fecha) = 3 AND YEAR(fecha) = 2026;`,
         isActive: true,
         keywords: 'ventas,vendido,total,totales,ingresos,recaudado,marzo,mes,año,dinero,monto,SUM',
         priority: 10
@@ -70,7 +71,7 @@ SQL: SELECT i.descripcion, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total EL
 ---
 
 Pregunta: Total de ventas del mes actual
-SQL: SELECT CONCAT(ROUND(SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario), 2), ' Bs') AS total_ventas FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id WHERE p.estado != 'ANULADO' AND YEAR(p.fecha) = YEAR(CURDATE()) AND MONTH(p.fecha) = MONTH(CURDATE());
+SQL: SELECT CONCAT(ROUND(SUM(total), 2), ' Bs') AS ingresos_totales FROM pedidos WHERE estado != 'ANULADO' AND YEAR(fecha) = YEAR(CURDATE()) AND MONTH(fecha) = MONTH(CURDATE());
 
 ---
 
@@ -90,19 +91,131 @@ SQL: SELECT i.descripcion AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.c
 ---
 
 Pregunta: Cual es el total de ingresos por ventas en marzo de 2026
-SQL: SELECT CONCAT(ROUND(SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario), 2), ' Bs') AS total_ingresos FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id WHERE p.estado != 'ANULADO' AND MONTH(p.fecha) = 3 AND YEAR(p.fecha) = 2026;
+SQL: SELECT CONCAT(ROUND(SUM(total), 2), ' Bs') AS ingresos_totales FROM pedidos WHERE estado != 'ANULADO' AND MONTH(fecha) = 3 AND YEAR(fecha) = 2026;
 
 ---
 
 Pregunta: Cuanto dinero generaron las ventas en total el dia de hoy
-SQL: SELECT CONCAT(ROUND(SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario), 2), ' Bs') AS total_ingresos FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = CURDATE();
+SQL: SELECT CONCAT(ROUND(SUM(total), 2), ' Bs') AS ingresos_totales FROM pedidos WHERE estado != 'ANULADO' AND DATE(fecha) = CURDATE();
 
 ---
 
 Pregunta: Cuanto fue el total recaudado en ventas el 12 de abril de 2026
-SQL: SELECT CONCAT(ROUND(SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario), 2), ' Bs') AS total_ingresos FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = '2026-04-12';`,
+SQL: SELECT CONCAT(ROUND(SUM(total), 2), ' Bs') AS ingresos_totales FROM pedidos WHERE estado != 'ANULADO' AND DATE(fecha) = '2026-04-12';`,
         isActive: true,
         keywords: 'ventas,pedidos,productos,clientes,hoy,ayer,mes,buscar,vendido,marzo,abril,ingresos,recaudado,total',
+        priority: 5
+    },
+    {
+        key: 'ej_ventas_totales_agregados',
+        category: 'EJEMPLOS_SQL',
+        content: `Pregunta: ¿Cuántas ventas (pedidos) hubo hoy y cuál es el total de dinero recaudado?
+SQL: SELECT COUNT(pedido_id) AS cantidad_de_ventas, CONCAT(ROUND(SUM(total), 2), ' Bs') AS ingresos_totales FROM pedidos WHERE estado != 'ANULADO' AND DATE(fecha) = CURDATE();
+
+---
+
+Pregunta: ¿Cuál fue el ingreso total por ventas durante el mes de marzo de 2026?
+SQL: SELECT CONCAT(ROUND(SUM(total), 2), ' Bs') AS ingresos_totales FROM pedidos WHERE estado != 'ANULADO' AND MONTH(fecha) = 3 AND YEAR(fecha) = 2026;
+
+---
+
+Pregunta: Dame el total general de ingresos generados exactamente el 12 - abril - 2026 (sumando todo con y sin factura).
+SQL: SELECT CONCAT(ROUND(SUM(total), 2), ' Bs') AS ingresos_totales FROM pedidos WHERE estado != 'ANULADO' AND DATE(fecha) = '2026-04-12';
+
+---
+
+Pregunta: ¿Cuánto dinero llevamos recaudado en ventas en todo lo que va de este año?
+SQL: SELECT CONCAT(ROUND(SUM(total), 2), ' Bs') AS ingresos_totales FROM pedidos WHERE estado != 'ANULADO' AND YEAR(fecha) = YEAR(CURDATE());
+
+---
+
+Pregunta: ¿Cuál es la recaudación global de todas las ventas realizadas en el mes actual?
+SQL: SELECT CONCAT(ROUND(SUM(total), 2), ' Bs') AS ingresos_totales FROM pedidos WHERE estado != 'ANULADO' AND MONTH(fecha) = MONTH(CURDATE()) AND YEAR(fecha) = YEAR(CURDATE());
+
+---
+
+Pregunta: ¿Cuánto vendimos en total durante todo el año 2025?
+SQL: SELECT CONCAT(ROUND(SUM(total), 2), ' Bs') AS ingresos_totales FROM pedidos WHERE estado != 'ANULADO' AND YEAR(fecha) = 2025;
+
+---
+
+Pregunta: Dime las ventas de marzo de 2026
+SQL: SELECT CONCAT(ROUND(SUM(total), 2), ' Bs') AS ingresos_totales FROM pedidos WHERE estado != 'ANULADO' AND MONTH(fecha) = 3 AND YEAR(fecha) = 2026;
+
+---
+
+Pregunta: Total vendido en marzo de 2026
+SQL: SELECT CONCAT(ROUND(SUM(total), 2), ' Bs') AS ingresos_totales FROM pedidos WHERE estado != 'ANULADO' AND MONTH(fecha) = 3 AND YEAR(fecha) = 2026;`,
+        isActive: true,
+        keywords: 'ventas,vendido,total,marzo,mes,ingresos,recaudado,dinero,bs,bolivianos',
+        priority: 10
+    },
+    {
+        key: 'ej_intervalos_tiempo',
+        category: 'EJEMPLOS_SQL',
+        content: `Pregunta: ¿Qué productos fueron los más vendidos hoy entre las 10:00 am y las 2:00 pm?
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = CURDATE() AND HOUR(p.fecha) >= 10 AND HOUR(p.fecha) < 14 GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY cantidad_vendida DESC;
+
+---
+
+Pregunta: ¿Cuántos productos se vendieron ayer entre las 9:00 am y las 10:00 am?
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND HOUR(p.fecha) = 9 GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY cantidad_vendida DESC;
+
+---
+
+Pregunta: ¿Cuánto dinero generó cada producto vendido el 15 de abril de 2026 entre las 3:00 pm y las 5:00 pm?
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario) AS ingresos_generados FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = '2026-04-15' AND HOUR(p.fecha) >= 15 AND HOUR(p.fecha) < 17 GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY ingresos_generados DESC;
+
+---
+
+Pregunta: ¿Cuántas "Sanguchitas" (en todas sus presentaciones) se vendieron hoy específicamente al mediodía (entre las 12:00 pm y las 2:00 pm)?
+SQL: SELECT SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_sanguchitas FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = CURDATE() AND HOUR(p.fecha) >= 12 AND HOUR(p.fecha) < 14 AND LOWER(i.descripcion) LIKE '%sanguchita%';
+
+---
+
+Pregunta: Top 3 de productos más vendidos durante el horario de cena (6:00 pm a 9:00 pm) del 10 de mayo de 2026.
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = '2026-05-10' AND HOUR(p.fecha) >= 18 AND HOUR(p.fecha) < 21 GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY cantidad_vendida DESC LIMIT 3;
+
+---
+
+Pregunta: Muestra el reporte de ventas e ingresos por producto del turno mañana de ayer (entre las 8:00 am y las 12:00 pm).
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida, SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario) AS ingresos_totales FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND HOUR(p.fecha) >= 8 AND HOUR(p.fecha) < 12 GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY ingresos_totales DESC;`,
+        isActive: true,
+        keywords: 'horario,tiempo,intervalo,hora,am,pm,mediodia,cena,turno,mañana,tarde,productos,vendidos',
+        priority: 5
+    },
+    {
+        key: 'ej_productos_mas_vendidos',
+        category: 'EJEMPLOS_SQL',
+        content: `Pregunta: ¿Cuáles son los productos más vendidos de esta semana?
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND YEARWEEK(p.fecha, 1) = YEARWEEK(CURDATE(), 1) GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY cantidad_vendida DESC;
+
+---
+
+Pregunta: Los 5 productos más vendidos hoy
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = CURDATE() GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY cantidad_vendida DESC LIMIT 5;
+
+---
+
+Pregunta: Productos más vendidos de la última semana (solo cantidad, sin ingresos)
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND p.fecha >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY cantidad_vendida DESC;
+
+---
+
+Pregunta: Productos más vendidos de la última semana con sus ingresos en Bolivianos
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida, CONCAT(ROUND(SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario), 2), ' Bs') AS ingresos_totales FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND p.fecha >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY cantidad_vendida DESC;
+
+---
+
+Pregunta: ¿Cuáles fueron los productos más vendidos ayer durante el horario de almuerzo (entre las 11:00 am y las 2:00 pm)?
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND p.fecha >= CONCAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), ' 11:00:00') AND p.fecha < CONCAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), ' 14:00:00') GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY cantidad_vendida DESC LIMIT 1000;
+
+---
+
+Pregunta: ¿Cuánto dinero en Bolivianos generó cada producto ayer en las últimas horas de atención (después de las 10:00 pm)?
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, CONCAT(ROUND(SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario), 2), ' Bs') AS ingresos_totales FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND p.fecha >= CONCAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), ' 22:00:00') AND p.fecha < CURDATE() GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario) DESC;`,
+        isActive: true,
+        keywords: 'productos,vendidos,mas,top,ranking,estrella,semana,mes,año,hoy,ayer,ingresos,almuerzo,horario',
         priority: 5
     }
 ];
