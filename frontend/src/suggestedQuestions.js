@@ -27,7 +27,7 @@ export const baseQuestions = [
         questions: [
             'Que productos fueron los mas vendidos hoy entre las 10:00 am y las 2:00 pm',
             'Cuantos productos se vendieron ayer entre las 9:00 am y las 10:00 am',
-            'Top 3 de productos mas vendidos durante el horario de cena del 10 de mayo de 2026',
+            'Top 3 de productos mas vendidos el 13 de abril de 10am a 17pm',
             'Productos mas vendidos ayer durante el horario de almuerzo'
         ]
     },

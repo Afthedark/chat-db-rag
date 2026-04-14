@@ -1,10 +1,32 @@
+// LoadingBlocker Component - Inline to avoid module issues
+const LoadingBlocker = () => ({
+    isBlocking: false,
+    message: 'Esperando respuesta de Mama Chicken IA...',
+    
+    block(message = null) {
+        this.isBlocking = true;
+        if (message) this.message = message;
+        document.body.style.overflow = 'hidden';
+    },
+    
+    unblock() {
+        this.isBlocking = false;
+        this.message = 'Esperando respuesta de Mama Chicken IA...';
+        document.body.style.overflow = '';
+    }
+});
+
 window.chatApp = function () {
     return {
         // --- UI STATE ---
         isSidebarOpen: false,
         isLoading: false,
+        isGenerating: false,
         currentChatId: null,
         theme: 'dark', // 'light' or 'dark'
+        
+        // --- LOADING BLOCKER ---
+        loadingBlocker: LoadingBlocker(),
 
         // --- DATA ---
         chats: [],
@@ -26,6 +48,8 @@ window.chatApp = function () {
             // Cargar Tema desde Utils
             this.theme = UIUtils.initTheme();
 
+            // Esperar a que el DOM esté listo antes de configurar Deep Chat
+            await this.$nextTick();
             this.setupDeepChat();
 
 
@@ -43,6 +67,10 @@ window.chatApp = function () {
         },
 
         toggleTheme() {
+            if (this.isGenerating) {
+                this.showToast('Espera a que termine la respuesta de Mama Chicken IA', 'warning');
+                return;
+            }
             this.theme = UIUtils.toggleTheme();
             
             // Add rotation animation to theme button
@@ -274,6 +302,16 @@ window.chatApp = function () {
                 return;
             }
 
+            // Bloquear UI durante la generación
+            this.isGenerating = true;
+            this.loadingBlocker.block();
+            
+            // Deshabilitar botón de submit de Deep Chat
+            const chatEl = document.getElementById('rag-deep-chat');
+            if (chatEl && chatEl.disableSubmitButton) {
+                chatEl.disableSubmitButton(true);
+            }
+
             const payload = {
                 question: question,
                 targetDbId: parseInt(this.selectedDatabaseId),
@@ -282,6 +320,13 @@ window.chatApp = function () {
 
             try {
                 const res = await axios.post('/api/chat', payload);
+                // Desbloquear UI después de recibir respuesta
+                this.isGenerating = false;
+                this.loadingBlocker.unblock();
+                if (chatEl && chatEl.disableSubmitButton) {
+                    chatEl.disableSubmitButton(false);
+                }
+                
                 if (res.data.success) {
                     const isNewChat = !this.currentChatId;
                     this.currentChatId = res.data.historyId;
@@ -325,6 +370,13 @@ window.chatApp = function () {
                 signals.onResponse({ error: errMsg });
             } finally {
                 this.isLoading = false;
+                // Asegurar que la UI se desbloquee en caso de error
+                this.isGenerating = false;
+                this.loadingBlocker.unblock();
+                const chatEl = document.getElementById('rag-deep-chat');
+                if (chatEl && chatEl.disableSubmitButton) {
+                    chatEl.disableSubmitButton(false);
+                }
             }
         },
 

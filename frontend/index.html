@@ -25,6 +25,25 @@
 
     <div x-data="chatApp()" class="d-flex w-100 vh-100 wrapper-scroll">
 
+        <!-- UI Blocker Overlay - Blocks all interactions while AI is generating -->
+        <div x-show="isGenerating" 
+             x-transition:enter="transition-opacity ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="ui-blocker"
+             style="display: none;">
+            <div class="ui-blocker-content">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <h5 class="mb-2" x-text="loadingBlocker.message"></h5>
+                <p class="text-muted small mb-0">Por favor espera a que termine la respuesta</p>
+            </div>
+        </div>
+
         <!-- Mobile Toggle Header -->
         <header
             class="mobile-header d-md-none w-100 py-2 px-3 border-bottom border-secondary border-opacity-25 glass-header d-flex align-items-center justify-content-between position-fixed top-0">
@@ -66,17 +85,29 @@
             <nav class="p-2">
                 <ul class="nav flex-column gap-1">
                     <li class="nav-item">
-                        <a href="/" class="nav-link w-100 text-start btn-custom rounded-3 active-nav">
+                        <a href="/" 
+                           class="nav-link w-100 text-start btn-custom rounded-3 active-nav"
+                           :class="{'disabled': isGenerating, 'opacity-50': isGenerating}"
+                           @click.prevent="isGenerating ? showToast('Espera a que termine la respuesta de Mama Chicken IA', 'warning') : null"
+                           :tabindex="isGenerating ? -1 : 0">
                             <i class="bi bi-chat-dots me-2"></i> Chat RAG
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="/admin/rules" class="nav-link w-100 text-start btn-custom rounded-3">
+                        <a href="/admin/rules" 
+                           class="nav-link w-100 text-start btn-custom rounded-3"
+                           :class="{'disabled': isGenerating, 'opacity-50': isGenerating}"
+                           @click.prevent="isGenerating ? showToast('Espera a que termine la respuesta de Mama Chicken IA', 'warning') : null"
+                           :tabindex="isGenerating ? -1 : 0">
                             <i class="bi bi-file-earmark-code me-2"></i> Reglas de IA
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="/admin/databases" class="nav-link w-100 text-start btn-custom rounded-3">
+                        <a href="/admin/databases" 
+                           class="nav-link w-100 text-start btn-custom rounded-3"
+                           :class="{'disabled': isGenerating, 'opacity-50': isGenerating}"
+                           @click.prevent="isGenerating ? showToast('Espera a que termine la respuesta de Mama Chicken IA', 'warning') : null"
+                           :tabindex="isGenerating ? -1 : 0">
                             <i class="bi bi-database me-2"></i> Bases de Datos
                         </a>
                     </li>
@@ -125,12 +156,12 @@
                     <div class="d-flex align-items-center gap-2 gap-md-3 flex-shrink-0">
                         <!-- Database Selector Pill -->
                         <div class="db-selector-wrapper" 
-                             :title="currentChatId ? 'Base de datos bloqueada - Inicia un nuevo chat para cambiar' : 'Seleccionar base de datos'">
+                             :title="isGenerating ? 'Espera a que termine la respuesta' : (currentChatId ? 'Base de datos bloqueada - Inicia un nuevo chat para cambiar' : 'Seleccionar base de datos')">
                             <i class="bi bi-database-fill db-selector-icon"
-                               :class="{ 'bi-database-fill': !currentChatId, 'bi-lock-fill': currentChatId }"></i>
+                               :class="{ 'bi-database-fill': !currentChatId && !isGenerating, 'bi-lock-fill': currentChatId || isGenerating }"></i>
                             <select x-model="selectedDatabaseId"
-                                    :disabled="currentChatId !== null"
-                                    :class="{ 'placeholder': !selectedDatabaseId }"
+                                    :disabled="currentChatId !== null || isGenerating"
+                                    :class="{ 'placeholder': !selectedDatabaseId, 'opacity-50': isGenerating }"
                                     class="db-selector-pill"
                                     aria-label="Seleccionar base de datos">
                                 <option value="" disabled hidden>Selecciona DB...</option>
