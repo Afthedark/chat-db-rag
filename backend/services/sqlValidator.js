@@ -53,10 +53,36 @@ const validate = (sql) => {
         };
     }
 
-    // 5. Verificar nombres de tablas comunes incorrectos (solo en FROM y JOIN)
+    // 5a. Replace TIME() BETWEEN pattern with HOUR() pattern (more reliable for MySQL)
+    const timePattern = /TIME\((\w+\.?\w+)\)\s+BETWEEN\s+'(\d{2}):\d{2}:\d{2}'\s+AND\s+'?(\d{2}):\d{2}:\d{2}'?/gi;
+    cleanSQL = cleanSQL.replace(timePattern, (match, col, startHour, endHour) => {
+        console.log('🔧 SQL Fix: Replaced TIME() BETWEEN with HOUR() pattern');
+        return `HOUR(${col}) >= ${parseInt(startHour)} AND HOUR(${col}) < ${parseInt(endHour)}`;
+    });
+
+    // 5b. Fix unclosed string quotes (common LLM error)
+    const singleQuoteCount = (cleanSQL.match(/'/g) || []).length;
+    if (singleQuoteCount % 2 !== 0) {
+        // Find the last unclosed quote and close it
+        const lastQuoteIdx = cleanSQL.lastIndexOf("'");
+        // Check if there's content after the last quote that looks like it should be inside the string
+        const afterQuote = cleanSQL.substring(lastQuoteIdx + 1);
+        const nextKeyword = afterQuote.search(/\s+(GROUP|ORDER|LIMIT|HAVING|UNION|WHERE|AND|OR)\s/i);
+        if (nextKeyword >= 0) {
+            cleanSQL = cleanSQL.substring(0, lastQuoteIdx + 1 + nextKeyword) + "'" + cleanSQL.substring(lastQuoteIdx + 1 + nextKeyword);
+            console.log('🔧 SQL Fix: Closed unclosed string quote');
+        }
+    }
+
+    // 5c. Verificar nombres de tablas comunes incorrectos (solo en FROM y JOIN)
     const commonWrongTables = [
         { wrong: 'lineas_pedido', correct: 'lin_pedidos' },
-        { wrong: 'linea_pedido', correct: 'lin_pedidos' }
+        { wrong: 'linea_pedido', correct: 'lin_pedidos' },
+        { wrong: 'lineas_pedidos', correct: 'lin_pedidos' },
+        { wrong: 'productos', correct: 'items' },
+        { wrong: 'producto', correct: 'items' },
+        { wrong: 'lineas_factura', correct: 'lin_facturas' },
+        { wrong: 'linea_factura', correct: 'lin_facturas' }
     ];
     
     // Extraer solo la parte de tablas (FROM y JOINs) para validar

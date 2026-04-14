@@ -58,7 +58,7 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
-sequelize.sync({ alter: true })
+sequelize.sync()
     .then(() => {
         console.log('📦 Base de datos de memoria sincronizada exitosamente.');
         app.listen(PORT, () => {

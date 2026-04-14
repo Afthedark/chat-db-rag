@@ -26,12 +26,11 @@ const fetchSmartContextRules = async (question, categories) => {
     return await memoryManager.getSmartContextRules(question, categories);
 };
 
-const buildSQLPrompt = async (question, dbDescription) => {
+const buildSQLPrompt = async (question, dbDescription, dynamicSchema = null) => {
     // Use smart context rules if available, fallback to basic fetch
     let rules;
     try {
         const smartRules = await fetchSmartContextRules(question, ['INSTRUCCIONES', 'EJEMPLOS_SQL']);
-        // Group smart rules by category
         rules = ['INSTRUCCIONES', 'EJEMPLOS_SQL'].reduce((acc, cat) => {
             acc[cat] = smartRules.filter(r => r.category === cat).map(r => r.content).join('\n---\n');
             return acc;
@@ -41,73 +40,88 @@ const buildSQLPrompt = async (question, dbDescription) => {
         rules = await fetchActiveRules(['INSTRUCCIONES', 'EJEMPLOS_SQL']);
     }
 
-    const systemPromptParts = [];
+    const TOTAL_BUDGET = 7000; // chars - safe for 8192 token context
+    const SCHEMA_MAX = 2000;   // chars - cap dynamic schema
     
-    // Instrucciones base
-    systemPromptParts.push(`Eres un experto en MySQL y analista de datos. Tu tarea principal es convertir requerimientos y preguntas hechas en lenguaje natural a consultas SQL válidas.
-
-REGLAS DE SEGURIDAD:
-- Solo puedes generar sentencias de tipo SELECT o SHOW
-- NUNCA uses INSERT, UPDATE, DELETE, DROP o cualquier comando que modifique datos
-- No uses funciones de archivo como LOAD_FILE
-
-FORMATO DE RESPUESTA:
-- Responde ÚNICAMENTE con la consulta SQL requerida
-- Sin explicaciones adicionales
-- NO uses bloques de markdown
-- Devuelve solo la cadena SQL pura lista para ejecutarse`);
+    // === BUILD PROMPT IN PRIORITY ORDER (most important FIRST for 8B models) ===
     
-    // Agregar reglas personalizadas si existen
+    // [1] ROL + FORMATO (always included, ~200 chars)
+    const roleSection = `Eres experto MySQL. Convierte preguntas en lenguaje natural a SQL.
+RESPONDE SOLO con la consulta SQL pura. Sin explicaciones, sin markdown, sin bloques de codigo.
+Solo SELECT o SHOW permitidos. NUNCA INSERT, UPDATE, DELETE, DROP.`;
+
+    // [2] INSTRUCCIONES - Critical rules with correct table names and JOINs
+    let instrSection = '';
     if (rules.INSTRUCCIONES) {
-        systemPromptParts.push('\n=== INSTRUCCIONES ADICIONALES ===');
-        systemPromptParts.push(rules.INSTRUCCIONES);
+        instrSection = '\n=== INSTRUCCIONES DEL SISTEMA (SEGUIR OBLIGATORIAMENTE) ===\n' + 
+            rules.INSTRUCCIONES.substring(0, 1500);
     }
     
-    // ESTRUCTURA DE BASE DE DATOS - CRÍTICO
-    systemPromptParts.push('\n=== ESTRUCTURA DE LA BASE DE DATOS - USAR EXACTAMENTE ESTOS NOMBRES ===');
-    systemPromptParts.push('NOMBRES DE TABLAS PERMITIDAS (USA SOLO ESTAS, NO INVENTES OTRAS):');
-    systemPromptParts.push('- pedidos (tabla principal de pedidos/ventas)');
-    systemPromptParts.push('- lin_pedidos (tabla de líneas/detalle de pedidos, NO usar lineas_pedido)');
-    systemPromptParts.push('- items (tabla de productos/items)');
-    systemPromptParts.push('- clientes (tabla de clientes)');
-    systemPromptParts.push('');
-    if (dbDescription) {
-        systemPromptParts.push('DESCRIPCIÓN DETALLADA DEL ESQUEMA:');
-        systemPromptParts.push(dbDescription);
-    } else {
-        systemPromptParts.push('ADVERTENCIA: No se proporcionó descripción detallada del esquema.');
-    }
-    
-    // Ejemplos SQL
+    // [3] REGLAS HARDCODED - Compact critical rules
+    const rulesSection = `\n=== REGLAS OBLIGATORIAS ===
+1. USA EXACTAMENTE los nombres de tablas y columnas de las INSTRUCCIONES arriba - NO INVENTES NOMBRES
+2. Sintaxis MySQL: CURDATE() para fecha actual, DATE_SUB() para intervalos - NO uses DATE('now')
+3. Para buscar texto: LOWER(columna) LIKE '%termino%'
+4. SIEMPRE excluye pedidos anulados: WHERE p.estado != 'ANULADO'
+5. Para filtrar por HORA usa: HOUR(p.fecha) >= X AND HOUR(p.fecha) < Y. NUNCA uses TIME() BETWEEN
+6. Responde UNICAMENTE con SQL puro listo para ejecutar`;
+
+    // [4] EJEMPLOS SQL - THE MOST VALUABLE PART for 8B models (learn by imitation)
+    let examplesSection = '';
     if (rules.EJEMPLOS_SQL) {
-        systemPromptParts.push('\n=== EJEMPLOS DE CONSULTAS (APRENDE DE ESTOS PATRONES) ===');
-        systemPromptParts.push(rules.EJEMPLOS_SQL);
-        systemPromptParts.push('\n=== FIN EJEMPLOS ===');
+        examplesSection = '\n=== EJEMPLOS SQL (COPIA ESTOS PATRONES EXACTAMENTE) ===\n' + 
+            rules.EJEMPLOS_SQL.substring(0, 2000);
     }
     
-    systemPromptParts.push(`\n=== REGLAS ESTRICTAS Y OBLIGATORIAS - OBLIGATORIO CUMPLIR ===
-1. USA EXACTAMENTE los nombres de tablas y columnas definidos en la ESTRUCTURA DE BASE DE DATOS arriba - NO INVENTES NOMBRES
-2. Las tablas disponibles son: pedidos, lin_pedidos, items, clientes - USA SOLO ESTAS
-3. Para buscar productos: usa LOWER(i.descripcion) LIKE '%termino%'
-4. Para cantidades: usa CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END
-5. SIEMPRE excluye pedidos ANULADOS: WHERE p.estado != 'ANULADO'
-6. JOINs OBLIGATORIOS: pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id
-7. SINTAXIS MySQL OBLIGATORIA: Usa CURDATE() para fecha actual, DATE_SUB(CURDATE(), INTERVAL 1 DAY) para ayer - NO uses DATE('now') que es SQLite
-8. Responde ÚNICAMENTE con la consulta SQL pura, sin markdown, sin explicaciones
-9. Solo comandos SELECT permitidos
-10. VERIFICA que cada nombre de tabla y columna exista en la ESTRUCTURA antes de usarlo
-11. COPIA la sintaxis exacta de los ejemplos proporcionados arriba`);
+    // [5] SCHEMA - Supplementary reference (LOWEST priority, trimmed first)
+    let schemaSection = '';
+    const schemaSource = dynamicSchema || dbDescription;
+    if (schemaSource) {
+        const cappedSchema = schemaSource.substring(0, SCHEMA_MAX);
+        schemaSection = '\n=== SCHEMA DE REFERENCIA (complementario) ===\n' + cappedSchema;
+    }
+
+    // === ASSEMBLE with budget control ===
+    // Priority: role > instrucciones > rules > examples > schema
+    // If budget exceeded, trim schema first, then cap examples
+    
+    let systemPrompt = roleSection + instrSection + rulesSection + examplesSection + schemaSection;
+    
+    if (systemPrompt.length > TOTAL_BUDGET) {
+        console.warn(`⚠️ Prompt exceeds budget: ${systemPrompt.length}/${TOTAL_BUDGET} chars.`);
+        
+        // Step 1: Remove schema entirely
+        systemPrompt = roleSection + instrSection + rulesSection + examplesSection;
+        console.warn(`   After removing schema: ${systemPrompt.length} chars`);
+        
+        if (systemPrompt.length > TOTAL_BUDGET) {
+            // Step 2: Trim examples to fit
+            const availableForExamples = TOTAL_BUDGET - (roleSection + instrSection + rulesSection).length;
+            if (availableForExamples > 200 && rules.EJEMPLOS_SQL) {
+                examplesSection = '\n=== EJEMPLOS SQL ===\n' + rules.EJEMPLOS_SQL.substring(0, availableForExamples - 50);
+            } else {
+                examplesSection = '';
+            }
+            systemPrompt = roleSection + instrSection + rulesSection + examplesSection;
+            console.warn(`   After trimming examples: ${systemPrompt.length} chars`);
+        }
+    }
 
     const finalPrompt = {
-        systemPrompt: systemPromptParts.join('\n'),
-        userPrompt: `Pregunta de usuario: ${question}\n\nGenera el SQL usando EXACTAMENTE los nombres de tablas y columnas de la estructura proporcionada arriba.`
+        systemPrompt,
+        userPrompt: `Pregunta: ${question}\n\nGenera SOLO el SQL usando las tablas y columnas de las instrucciones y ejemplos.`
     };
     
-    // Debug: log del prompt completo
+    // Debug logging
     console.log('=== SQL PROMPT DEBUG ===');
-    console.log('System Prompt Length:', finalPrompt.systemPrompt.length);
-    console.log('DB Description Included:', dbDescription ? 'YES' : 'NO');
-    console.log('DB Description Length:', dbDescription ? dbDescription.length : 0);
+    console.log('Total Prompt Length:', finalPrompt.systemPrompt.length, '/', TOTAL_BUDGET);
+    console.log('Sections included:');
+    console.log('  Role:', roleSection.length, 'chars');
+    console.log('  Instrucciones:', instrSection.length, 'chars', instrSection ? 'YES' : 'NONE');
+    console.log('  Rules:', rulesSection.length, 'chars');
+    console.log('  Examples:', examplesSection.length, 'chars', examplesSection ? 'YES' : 'NONE');
+    console.log('  Schema:', schemaSection.length, 'chars', schemaSection ? 'YES' : 'TRIMMED/NONE');
+    console.log('Schema Source:', dynamicSchema ? 'DYNAMIC' : (dbDescription ? 'DESCRIPTION' : 'NONE'));
     console.log('User Prompt:', finalPrompt.userPrompt);
     console.log('========================');
     

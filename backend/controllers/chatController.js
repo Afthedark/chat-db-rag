@@ -147,15 +147,28 @@ const handleChat = async (req, res, next) => {
         }
 
         // ================= PASO 1: Generación de SQL =================
+        // Extract dynamic schema from the actual database
+        let dynamicSchema = null;
+        try {
+            dynamicSchema = await dbManager.extractSchemaForPrompt(targetDbId);
+            console.log('=== DYNAMIC SCHEMA DEBUG ===');
+            console.log('Schema extracted:', dynamicSchema ? 'YES' : 'NO');
+            console.log('Schema length:', dynamicSchema ? dynamicSchema.length + ' chars' : '0');
+            console.log('Schema preview:', dynamicSchema ? dynamicSchema.substring(0, 300) + '...' : 'EMPTY');
+            console.log('============================');
+        } catch (schemaError) {
+            console.warn('⚠️ Dynamic schema extraction failed, using description fallback:', schemaError.message);
+        }
+
         console.log('=== DB CONFIG DEBUG ===');
         console.log('Connection ID:', dbConfig.id);
         console.log('Connection Name:', dbConfig.name);
         console.log('Description exists:', !!dbConfig.description);
         console.log('Description length:', dbConfig.description ? dbConfig.description.length : 0);
-        console.log('Description preview:', dbConfig.description ? dbConfig.description.substring(0, 200) + '...' : 'EMPTY');
+        console.log('Using schema source:', dynamicSchema ? 'DYNAMIC' : (dbConfig.description ? 'DESCRIPTION' : 'NONE'));
         console.log('=======================');
 
-        const { systemPrompt: sqlSystemPrompt, userPrompt: sqlUserPrompt } = await promptBuilder.buildSQLPrompt(question, dbConfig.description);
+        const { systemPrompt: sqlSystemPrompt, userPrompt: sqlUserPrompt } = await promptBuilder.buildSQLPrompt(question, dbConfig.description, dynamicSchema);
 
         let rawSQLResponse;
         try {

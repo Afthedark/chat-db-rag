@@ -188,58 +188,125 @@ const inferPreferences = async (chatId, question, sqlGenerated) => {
 /**
  * Smart context rule retrieval based on keywords
  */
+
+// Character budgets per category for LLM context optimization
+const RULE_BUDGETS = {
+    INSTRUCCIONES: { maxRules: 5, maxChars: 2500 },
+    EJEMPLOS_SQL: { maxRules: 5, maxChars: 3500 }
+};
+
 const getSmartContextRules = async (question, categories = ['INSTRUCCIONES', 'EJEMPLOS_SQL']) => {
     try {
         const keywords = embeddingService.extractKeywords(question);
 
+        let allRules;
         if (keywords.length === 0) {
-            // Fallback to all active rules
-            return await ContextRule.findAll({
+            // Fallback to all active rules but with limits
+            allRules = await ContextRule.findAll({
                 where: {
                     isActive: true,
                     category: categories
                 },
                 order: [['priority', 'DESC']]
             });
+        } else {
+            // Filter keywords for content matching (only meaningful ones, length > 3)
+            const contentKeywords = keywords.filter(kw => kw.length > 3);
+            
+            allRules = await ContextRule.findAll({
+                where: {
+                    isActive: true,
+                    category: categories,
+                    [Op.or]: [
+                        // Rules with matching keywords field
+                        ...keywords.map(kw => ({
+                            keywords: { [Op.like]: `%${kw}%` }
+                        })),
+                        // ALSO match rules whose CONTENT contains meaningful keywords
+                        ...(contentKeywords.length > 0 ? contentKeywords.map(kw => ({
+                            content: { [Op.like]: `%${kw}%` }
+                        })) : []),
+                        // Rules without keywords (legacy) - always include them
+                        { keywords: null },
+                        { keywords: '' }
+                    ]
+                },
+                order: [
+                    ['priority', 'DESC'],
+                    ['matchCount', 'DESC']
+                ]
+            });
         }
 
-        // Find rules with matching keywords OR rules without keywords (legacy rules)
-        const rules = await ContextRule.findAll({
-            where: {
-                isActive: true,
-                category: categories,
-                [Op.or]: [
-                    // Rules with matching keywords
-                    ...keywords.map(kw => ({
-                        keywords: { [Op.like]: `%${kw}%` }
-                    })),
-                    // Rules without keywords (legacy) - always include them
-                    { keywords: null },
-                    { keywords: '' }
-                ]
-            },
-            order: [
-                ['priority', 'DESC'],
-                ['matchCount', 'DESC']
-            ]
-        });
-        
-        // Increment match count for matched rules
-        for (const rule of rules) {
-            await rule.increment('matchCount');
+        // Apply per-category limits and character budgets
+        const limitedRules = [];
+        const debugInfo = {};
+        const originalRulesForIncrement = []; // Track original Sequelize instances
+
+        for (const cat of categories) {
+            const budget = RULE_BUDGETS[cat] || { maxRules: 5, maxChars: 3000 };
+            const catRules = allRules.filter(r => r.category === cat);
+            
+            let selectedRules = [];
+            let totalChars = 0;
+
+            for (const rule of catRules) {
+                if (selectedRules.length >= budget.maxRules) break;
+                
+                const remainingBudget = budget.maxChars - totalChars;
+                
+                if (remainingBudget <= 0) break;
+                
+                if (rule.content.length > remainingBudget) {
+                    // TRUNCATE the rule to fit instead of skipping it entirely
+                    // This ensures at least partial content is included
+                    const truncatedRule = { ...rule.toJSON ? rule.toJSON() : rule };
+                    truncatedRule.content = rule.content.substring(0, remainingBudget);
+                    selectedRules.push(truncatedRule);
+                    totalChars += truncatedRule.content.length;
+                    console.log(`   ⚠️ ${cat}: Rule "${rule.key || 'unknown'}" truncated from ${rule.content.length} to ${truncatedRule.content.length} chars`);
+                    // Still track original for increment
+                    originalRulesForIncrement.push(rule);
+                    break; // No more budget after truncation
+                } else {
+                    selectedRules.push(rule);
+                    originalRulesForIncrement.push(rule);
+                    totalChars += rule.content.length;
+                }
+            }
+
+            limitedRules.push(...selectedRules);
+            debugInfo[cat] = { total: catRules.length, selected: selectedRules.length, chars: totalChars };
         }
         
-        console.log(`🎯 Smart Context: Retrieved ${rules.length} rules for keywords: ${keywords.join(', ')}`);
-        return rules;
+        // Increment match count for selected rules only (use original Sequelize instances)
+        for (const rule of originalRulesForIncrement) {
+            try {
+                await rule.increment('matchCount');
+            } catch (incError) {
+                console.warn(`   ⚠️ Could not increment matchCount for rule "${rule.key || 'unknown'}":`, incError.message);
+            }
+        }
+        
+        console.log(`🎯 Smart Context Rules Budget:`);
+        for (const [cat, info] of Object.entries(debugInfo)) {
+            console.log(`   ${cat}: ${info.selected}/${info.total} rules, ${info.chars} chars`);
+        }
+        console.log(`   Keywords: ${keywords.length > 0 ? keywords.join(', ') : '(none - fallback mode)'}`);
+        
+        return limitedRules;
     } catch (error) {
         console.error('Error getting smart context rules:', error.message);
-        // Fallback to basic retrieval
-        return await ContextRule.findAll({
+        // Fallback with limits
+        const fallbackRules = await ContextRule.findAll({
             where: {
                 isActive: true,
                 category: categories
-            }
+            },
+            order: [['priority', 'DESC']],
+            limit: 8 // Hard safety limit on fallback
         });
+        return fallbackRules;
     }
 };
 

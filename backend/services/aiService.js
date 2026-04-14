@@ -34,9 +34,16 @@ const generateResponse = async (messages) => {
                 {
                     model: process.env.OLLAMA_MODEL || 'llama3',
                     messages: messages,
-                    stream: false
+                    stream: false,
+                    options: {
+                        num_ctx: parseInt(process.env.OLLAMA_NUM_CTX) || 8192,
+                        temperature: parseFloat(process.env.OLLAMA_TEMPERATURE) || 0.1,
+                        num_predict: parseInt(process.env.OLLAMA_NUM_PREDICT) || 500,
+                        top_p: 0.9,
+                        repeat_penalty: 1.1
+                    }
                 },
-                { timeout: 60000 }
+                { timeout: 120000 }
             );
 
             if (response.data && response.data.message) {

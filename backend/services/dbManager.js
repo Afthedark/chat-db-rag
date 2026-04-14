@@ -94,10 +94,85 @@ const closeAll = async () => {
     pools.clear();
 };
 
+// Schema cache with TTL
+const schemaCache = new Map(); // { databaseId: { schema: string, timestamp: number } }
+const SCHEMA_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Extract database schema in a compact format optimized for LLM prompts
+ * @param {number} databaseId - Database connection ID
+ * @param {number} maxTables - Maximum number of tables to include
+ * @returns {Promise<string>} - Compact schema string
+ */
+const extractSchemaForPrompt = async (databaseId, maxTables = 15) => {
+    // Check cache first
+    const cached = schemaCache.get(databaseId);
+    if (cached && (Date.now() - cached.timestamp) < SCHEMA_CACHE_TTL) {
+        console.log(`📋 Schema cache HIT for DB ${databaseId}`);
+        return cached.schema;
+    }
+
+    const pool = await getConnection(databaseId);
+    
+    try {
+        // 1. Get table list
+        const [tables] = await pool.query('SHOW TABLES');
+        const tableNames = tables.map(row => Object.values(row)[0]).slice(0, maxTables);
+        
+        if (tableNames.length === 0) {
+            return '';
+        }
+
+        const schemaLines = [];
+        
+        // 2. Describe each table
+        for (const tableName of tableNames) {
+            try {
+                const [columns] = await pool.query(`DESCRIBE \`${tableName}\``);
+                
+                const colDefs = columns.map(col => {
+                    let def = col.Field;
+                    // Add type (simplified)
+                    const type = col.Type.replace(/\(\d+\)/g, '').toUpperCase();
+                    def += ` ${type}`;
+                    // Mark primary key
+                    if (col.Key === 'PRI') def += ' PK';
+                    // Mark foreign key hint
+                    if (col.Key === 'MUL') def += ' FK';
+                    // Mark not null (skip for PKs)
+                    if (col.Null === 'NO' && col.Key !== 'PRI') def += ' NOT NULL';
+                    return def;
+                });
+                
+                schemaLines.push(`${tableName}(${colDefs.join(', ')})`);
+            } catch (descError) {
+                console.warn(`Warning: Could not describe table ${tableName}:`, descError.message);
+            }
+        }
+        
+        let schema = schemaLines.join('\n');
+        
+        // 3. Truncate if too long (4000 chars max)
+        if (schema.length > 4000) {
+            schema = schema.substring(0, 4000) + '\n... [schema truncado]';
+        }
+        
+        // 4. Cache the result
+        schemaCache.set(databaseId, { schema, timestamp: Date.now() });
+        console.log(`📋 Schema extracted for DB ${databaseId}: ${tableNames.length} tables, ${schema.length} chars`);
+        
+        return schema;
+    } catch (error) {
+        console.error('Error extracting schema:', error.message);
+        return '';
+    }
+};
+
 module.exports = {
     getConnection,
     executeQuery,
     testConnection,
     removePool,
-    closeAll
+    closeAll,
+    extractSchemaForPrompt
 };

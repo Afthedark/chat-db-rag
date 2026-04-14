@@ -1,85 +1,109 @@
 const { sequelize, ContextRule } = require('../models');
 
+// NOTA: Si ya existen reglas con estas keys en la BD, la funcion seedRules
+// las actualizara automaticamente con el nuevo contenido (upsert).
 const rulesSeed = [
+    {
+        key: 'calculo_totales_ventas',
+        category: 'INSTRUCCIONES',
+        content: `REGLA CRITICA PARA CALCULAR TOTALES DE VENTAS:
+
+NUNCA uses SUM(lp.total) - esa columna NO es confiable.
+
+USA SIEMPRE esta formula exacta para calcular ingresos/totales:
+SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario)
+
+Explicacion:
+- cant_total: cantidad final despues de ajustes (prioridad si > 0)
+- cantidad: cantidad original del pedido
+- precio_unitario: precio de venta del item
+- Multiplica cantidad * precio_unitario para obtener el total real
+
+Para mostrar el resultado formateado:
+CONCAT(ROUND(SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario), 2), ' Bs')`,
+        isActive: true,
+        keywords: 'ventas,vendido,total,totales,ingresos,recaudado,marzo,mes,año,dinero,monto,SUM',
+        priority: 10
+    },
     {
         key: 'instrucciones_sistema',
         category: 'INSTRUCCIONES',
-        content: `INSTRUCCIONES CRÍTICAS PARA GENERAR SQL:
+        content: `INSTRUCCIONES PARA GENERAR SQL - SISTEMA POS RESTAURANTE (pv_mchicken):
 
-1. USA EXACTAMENTE los nombres de tablas y columnas del esquema proporcionado en "ESTRUCTURA DE LA BASE DE DATOS"
-2. Las tablas disponibles son ÚNICAMENTE: pedidos, lin_pedidos, items, clientes - NO uses otras tablas
-3. NUNCA inventes nombres de tablas o columnas que no estén en el esquema
-4. Para buscar productos usa: LOWER(i.descripcion) LIKE '%termino%'
-5. Para cantidades usa: CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END
-6. SIEMPRE excluye pedidos ANULADOS: WHERE p.estado != 'ANULADO'
-7. JOINs OBLIGATORIOS: pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id
-8. Puedes usar AS para dar nombres descriptivos a columnas (ej: i.descripcion AS nombre_producto)
-9. La tabla de productos se llama "items", NO "productos"
-10. La tabla de líneas de pedido se llama "lin_pedidos", NO "lineas_pedido"
+TABLAS PRINCIPALES DE VENTAS (las mas importantes):
+- pedidos: tabla principal de ventas (pedido_id PK, fecha, estado, cliente_id, nom_pedido_cliente, metodoPago, total)
+- lin_pedidos: detalle/lineas de cada pedido (pedido_id FK, item_id FK, cantidad, cant_total, precio_unitario, total, llevar)
+- items: productos del menu (item_id PK, descripcion)
+- clientes: clientes (cliente_id PK, nit, nombre_razon_social, direccion, telefono, email)
 
-REGLAS DE SEGURIDAD:
-- Solo puedes generar sentencias de tipo SELECT o SHOW
-- NUNCA uses INSERT, UPDATE, DELETE, DROP o cualquier comando que modifique datos
-- No uses funciones de archivo como LOAD_FILE
+TABLAS SECUNDARIAS:
+- facturas: facturas fiscales vinculadas a pedidos (factura_id, pedido_id FK)
+- lin_facturas: detalle de facturas (lin_factura_id, factura_id FK, item_id FK, cantidad, precio_unitario, total)
+- combos: items de combos en facturas (combo_id, lin_factura_id FK, item_id FK)
+- sucursales, cajas, almacenes, empleados, turnos, ajustes
 
-FORMATO DE RESPUESTA:
-- Responde ÚNICAMENTE con la consulta SQL requerida
-- Sin explicaciones adicionales
-- NO uses bloques de markdown (como \`\`\`sql ... \`\`\`)
-- Devuelve solo la cadena SQL pura lista para ejecutarse`,
-        isActive: true
+REGLAS CRITICAS:
+1. Para ventas/productos usa: pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id
+2. SIEMPRE filtra anulados: WHERE p.estado != 'ANULADO'
+3. Para cantidades correctas: CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END
+4. Para buscar productos: LOWER(i.descripcion) LIKE '%termino%'
+5. Para clientes: JOIN clientes c ON p.cliente_id = c.cliente_id
+6. Fechas MySQL: CURDATE(), DATE_SUB(CURDATE(), INTERVAL N DAY), DATE(p.fecha)
+7. La tabla de productos se llama "items" NO "productos"
+8. La tabla de lineas se llama "lin_pedidos" NO "lineas_pedido" ni "lin_facturas"
+9. NO uses la tabla combos ni lin_facturas para consultas de ventas - usa pedidos y lin_pedidos`,
+        isActive: true,
+        keywords: 'ventas,pedidos,items,clientes,productos,sucursales,facturas,lin_pedidos',
+        priority: 10
     },
     {
-        key: 'ejemplos_pedidos',
+        key: 'ejemplos_ventas_basicas',
         category: 'EJEMPLOS_SQL',
-        content: `Pregunta: ¿Cuántos pedidos hubo hoy?
+        content: `Pregunta: ¿Cuantas ventas hubo hoy?
 SQL: SELECT COUNT(*) as total_pedidos FROM pedidos WHERE DATE(fecha) = CURDATE() AND estado != 'ANULADO';
 
 ---
 
-Pregunta: Muéstrame el producto que más vendió y cuanto de ingresos generó
-SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) as producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END * lp.precio_unitario) as total_ingresos FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY total_ingresos DESC LIMIT 1;
+Pregunta: Producto mas vendido
+SQL: SELECT i.descripcion, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) as cantidad_vendida FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' GROUP BY i.descripcion ORDER BY cantidad_vendida DESC LIMIT 1;
 
 ---
 
 Pregunta: Total de ventas del mes actual
-SQL: SELECT SUM(lp.total) as ventas_mes FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id WHERE p.estado != 'ANULADO' AND YEAR(p.fecha) = YEAR(CURDATE()) AND MONTH(p.fecha) = MONTH(CURDATE());
+SQL: SELECT CONCAT(ROUND(SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario), 2), ' Bs') AS total_ventas FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id WHERE p.estado != 'ANULADO' AND YEAR(p.fecha) = YEAR(CURDATE()) AND MONTH(p.fecha) = MONTH(CURDATE());
 
 ---
 
-Pregunta: Top 5 clientes con más compras
-SQL: SELECT c.nombre_razon_social as nombre, COUNT(p.pedido_id) as total_pedidos, SUM(p.total) as monto_total FROM clientes c JOIN pedidos p ON c.cliente_id = p.cliente_id WHERE p.estado != 'ANULADO' GROUP BY c.cliente_id, c.nombre_razon_social ORDER BY monto_total DESC LIMIT 5;
+Pregunta: Top 5 clientes con mas compras
+SQL: SELECT c.nombre_razon_social as nombre, COUNT(p.pedido_id) as total_pedidos, CONCAT(ROUND(SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario), 2), ' Bs') as monto_total FROM clientes c JOIN pedidos p ON c.cliente_id = p.cliente_id JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id WHERE p.estado != 'ANULADO' GROUP BY c.cliente_id, c.nombre_razon_social ORDER BY monto_total DESC LIMIT 5;
 
 ---
 
-Pregunta: Productos sin ventas en los últimos 30 días
-SQL: SELECT i.descripcion as producto FROM items i LEFT JOIN lin_pedidos lp ON i.item_id = lp.item_id LEFT JOIN pedidos p ON lp.pedido_id = p.pedido_id AND p.fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND p.estado != 'ANULADO' WHERE p.pedido_id IS NULL;
+Pregunta: Ventas de ayer por producto
+SQL: SELECT i.descripcion AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad, SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario) AS ingresos FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY i.descripcion ORDER BY ingresos DESC;
 
 ---
 
-Pregunta: Busca productos que contengan "sanguchita"
-SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto_base, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_total FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND LOWER(i.descripcion) LIKE '%sanguchita%' GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', ''));
+Pregunta: Buscar productos que contengan "pollo"
+SQL: SELECT i.descripcion AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND LOWER(i.descripcion) LIKE '%pollo%' GROUP BY i.descripcion ORDER BY cantidad_vendida DESC;
 
 ---
 
-Pregunta: Ventas de hoy agrupadas por producto
-SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad, SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario) AS ingresos FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = CURDATE() GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY ingresos DESC;
+Pregunta: Cual es el total de ingresos por ventas en marzo de 2026
+SQL: SELECT CONCAT(ROUND(SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario), 2), ' Bs') AS total_ingresos FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id WHERE p.estado != 'ANULADO' AND MONTH(p.fecha) = 3 AND YEAR(p.fecha) = 2026;
 
 ---
 
-Pregunta: ¿Cuántas ventas hicimos ayer?
-SQL: SELECT COUNT(DISTINCT p.pedido_id) as total_ventas, SUM(lp.total) as total_ingresos FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = DATE_SUB(CURDATE(), INTERVAL 1 DAY);
+Pregunta: Cuanto dinero generaron las ventas en total el dia de hoy
+SQL: SELECT CONCAT(ROUND(SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario), 2), ' Bs') AS total_ingresos FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = CURDATE();
 
 ---
 
-Pregunta: ¿Qué productos se vendieron poco ayer? (menos de 5 unidades)
-SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS nombre_producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) HAVING cantidad_vendida < 5 ORDER BY cantidad_vendida ASC;
-
----
-
-Pregunta: Productos con bajas ventas ayer (menos de 3 vendidos)
-SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS nombre_producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) HAVING cantidad_vendida < 3 ORDER BY cantidad_vendida ASC;`,
-        isActive: true
+Pregunta: Cuanto fue el total recaudado en ventas el 12 de abril de 2026
+SQL: SELECT CONCAT(ROUND(SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario), 2), ' Bs') AS total_ingresos FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = '2026-04-12';`,
+        isActive: true,
+        keywords: 'ventas,pedidos,productos,clientes,hoy,ayer,mes,buscar,vendido,marzo,abril,ingresos,recaudado,total',
+        priority: 5
     }
 ];
 
@@ -88,19 +112,30 @@ const seedRules = async () => {
         await sequelize.authenticate();
         console.log('Conexión a BD Memoria verificada.');
         
-        await sequelize.sync({ alter: true });
+        await sequelize.sync();
         console.log('Tablas sincronizadas.');
 
         let createdCount = 0;
+        let updatedCount = 0;
         for (const rule of rulesSeed) {
             const [record, created] = await ContextRule.findOrCreate({
                 where: { key: rule.key },
                 defaults: rule
             });
-            if (created) createdCount++;
+            if (created) {
+                createdCount++;
+            } else {
+                // Update existing rule with new content
+                await record.update({
+                    content: rule.content,
+                    keywords: rule.keywords || record.keywords,
+                    priority: rule.priority || record.priority
+                });
+                updatedCount++;
+            }
         }
 
-        console.log(`¡Seed Completado! Reglas creadas: ${createdCount}`);
+        console.log(`Seed Completado! Reglas creadas: ${createdCount}, actualizadas: ${updatedCount}`);
         process.exit(0);
     } catch (error) {
         console.error('Error insertando las reglas iniciales (seed):', error);
