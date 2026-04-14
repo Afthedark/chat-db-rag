@@ -190,10 +190,27 @@ const inferPreferences = async (chatId, question, sqlGenerated) => {
  */
 
 // Character budgets per category for LLM context optimization
-const RULE_BUDGETS = {
-    INSTRUCCIONES: { maxRules: 5, maxChars: 2500 },
-    EJEMPLOS_SQL: { maxRules: 5, maxChars: 3500 }
+// Adjust based on model capabilities (128K vs 1M context)
+const getRuleBudgets = () => {
+    const useGeminiOptimizations = process.env.USE_GEMINI_OPTIMIZATIONS === 'true';
+    
+    if (useGeminiOptimizations) {
+        // Gemini 3 Flash with 1M context - generous budgets
+        return {
+            INSTRUCCIONES: { maxRules: 10, maxChars: 8000 },
+            EJEMPLOS_SQL: { maxRules: 15, maxChars: 12000 }
+        };
+    }
+    
+    // Standard 128K models (llama3.1:8b, etc.) - conservative budgets
+    return {
+        INSTRUCCIONES: { maxRules: 5, maxChars: 2500 },
+        EJEMPLOS_SQL: { maxRules: 5, maxChars: 3500 }
+    };
 };
+
+// Legacy export for backward compatibility
+const RULE_BUDGETS = getRuleBudgets();
 
 const getSmartContextRules = async (question, categories = ['INSTRUCCIONES', 'EJEMPLOS_SQL']) => {
     try {
@@ -242,9 +259,10 @@ const getSmartContextRules = async (question, categories = ['INSTRUCCIONES', 'EJ
         const limitedRules = [];
         const debugInfo = {};
         const originalRulesForIncrement = []; // Track original Sequelize instances
+        const ruleBudgets = getRuleBudgets(); // Get dynamic budgets based on model
 
         for (const cat of categories) {
-            const budget = RULE_BUDGETS[cat] || { maxRules: 5, maxChars: 3000 };
+            const budget = ruleBudgets[cat] || { maxRules: 5, maxChars: 3000 };
             const catRules = allRules.filter(r => r.category === cat);
             
             let selectedRules = [];

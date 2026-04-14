@@ -5,7 +5,8 @@ export const baseQuestions = [
         questions: [
             'Cual es el total de ingresos por ventas en marzo de 2026',
             'Cuanto dinero generaron las ventas en total el dia de hoy',
-            'Cuantas ventas (pedidos) hubo hoy y cual es el total de dinero recaudado',
+            'Cuantas ventas hubo hoy',
+            'Cuanto fue el total recaudado en ventas el 12 de abril de 2026',
             'Cuanto vendimos en total durante todo el año 2025'
         ]
     },
@@ -16,7 +17,8 @@ export const baseQuestions = [
             'Producto mas vendido',
             'Cuales son los productos mas vendidos de esta semana',
             'Los 5 productos mas vendidos hoy',
-            'Productos mas vendidos de la ultima semana'
+            'Productos mas vendidos de la ultima semana (solo cantidad, sin ingresos)',
+            'Productos mas vendidos de la ultima semana con sus ingresos en Bolivianos'
         ]
     },
     {
@@ -24,16 +26,17 @@ export const baseQuestions = [
         icon: 'bi-clock',
         questions: [
             'Que productos fueron los mas vendidos hoy entre las 10:00 am y las 2:00 pm',
+            'Cuantos productos se vendieron ayer entre las 9:00 am y las 10:00 am',
             'Top 3 de productos mas vendidos durante el horario de cena del 10 de mayo de 2026',
             'Productos mas vendidos ayer durante el horario de almuerzo'
         ]
     },
     {
-        category: 'Clientes',
-        icon: 'bi-people',
+        category: 'Busquedas',
+        icon: 'bi-search',
         questions: [
-            'Top 5 clientes con mas compras',
-            'Buscar productos que contengan pollo'
+            'Buscar productos que contengan pollo',
+            'Cuantas Sanguchitas se vendieron hoy especificamente al mediodia'
         ]
     }
 ];

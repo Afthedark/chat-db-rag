@@ -27,6 +27,58 @@ SELECT CONCAT(ROUND(SUM(total), 2), ' Bs') AS ingresos_totales FROM pedidos WHER
         priority: 10
     },
     {
+        key: 'prohibicion_lp_total_ingresos',
+        category: 'INSTRUCCIONES',
+        content: `REGLA CRITICA - CÁLCULO DE INGRESOS POR PRODUCTO:
+
+NUNCA uses SUM(lp.total) para calcular ingresos de productos individuales.
+
+La columna lp.total es INCORRECTA para este propósito porque no refleja el precio_unitario real.
+
+FÓRMULA OBLIGATORIA para ingresos por producto:
+SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario)
+
+Esta fórmula:
+1. Usa la cantidad real (cant_total si existe, sino cantidad)
+2. Multiplica por el precio_unitario de cada línea
+3. Suma el resultado para obtener ingresos totales correctos
+
+EJEMPLO DE ERROR (NUNCA HACER):
+SELECT SUM(lp.total) AS ingresos  -- INCORRECTO, SIEMPRE DARÁ 0.00
+
+EJEMPLO CORRECTO:
+SELECT SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario) AS ingresos  -- CORRECTO
+
+IMPORTANTE: Esta regla aplica SOLO para ingresos por producto. Para totales generales de ventas, usa SUM(pedidos.total).`,
+        isActive: true,
+        keywords: 'ingresos,total,lp.total,precio_unitario,calculo,dinero,bs,bolivianos,producto,generado',
+        priority: 10
+    },
+    {
+        key: 'unificacion_nombres_productos',
+        category: 'INSTRUCCIONES',
+        content: `REGLA DE UNIFICACIÓN DE NOMBRES DE PRODUCTOS:
+
+SIEMPRE usa TRIM(REPLACE(i.descripcion, '(PLL)', '')) para:
+1. El nombre del producto en SELECT
+2. El GROUP BY
+
+Esto unifica las versiones con y sin (PLL) del mismo producto, evitando duplicados.
+
+NUNCA agrupes solo por i.descripcion o i.item_id.
+
+EJEMPLO:
+SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, ...
+GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', ''))
+
+NO HACER:
+SELECT i.descripcion AS producto, ...  -- Esto separa "Pollo" de "Pollo (PLL)"
+GROUP BY i.item_id, i.descripcion`,
+        isActive: true,
+        keywords: 'producto,nombre,descripcion,pll,unificar,agrupar,group by,trim,replace',
+        priority: 9
+    },
+    {
         key: 'instrucciones_sistema',
         category: 'INSTRUCCIONES',
         content: `INSTRUCCIONES PARA GENERAR SQL - SISTEMA POS RESTAURANTE (pv_mchicken):
@@ -247,7 +299,27 @@ SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN
 
 ---
 
-Pregunta: ¿Cuáles fueron los productos más vendidos ayer durante el horario de almuerzo (entre las 11:00 am y las 2:00 pm)?
+Pregunta: Dime los productos más vendidos de ayer con sus ingresos
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida, CONCAT(ROUND(SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario), 2), ' Bs') AS total_generado FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY cantidad_vendida DESC LIMIT 10;
+
+---
+
+Pregunta: Productos más vendidos hoy con ingresos en Bolivianos
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida, CONCAT(ROUND(SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario), 2), ' Bs') AS ingresos_totales FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = CURDATE() GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY cantidad_vendida DESC;
+
+---
+
+Pregunta: Cuanto dinero genero cada producto vendido el 15 de abril de 2026 entre las 3:00 pm y las 5:00 pm
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, CONCAT(ROUND(SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario), 2), ' Bs') AS ingresos_generados FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = '2026-04-15' AND HOUR(p.fecha) >= 15 AND HOUR(p.fecha) < 17 GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY ingresos_generados DESC;
+
+---
+
+Pregunta: Muestra el reporte de ventas e ingresos por producto del turno mañana de hoy
+SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida, CONCAT(ROUND(SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario), 2), ' Bs') AS ingresos_totales FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = CURDATE() AND HOUR(p.fecha) >= 8 AND HOUR(p.fecha) < 12 GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY ingresos_totales DESC;
+
+---
+
+Pregunta: ¿Cuáles fueron los productos más vendidos ayer durante el horario de almuerzo (entre las 11:00 am y las 2:00 pm))?
 SQL: SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto, SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id WHERE p.estado != 'ANULADO' AND p.fecha >= CONCAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), ' 11:00:00') AND p.fecha < CONCAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), ' 14:00:00') GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) ORDER BY cantidad_vendida DESC LIMIT 1000;
 
 ---

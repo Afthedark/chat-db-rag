@@ -142,7 +142,7 @@ window.chatApp = function () {
 
                 // Nombres en español
                 names: {
-                    ai: { text: 'Asistente IA', style: { color: isDark ? '#60a5fa' : '#007aff', fontWeight: '600' } },
+                    ai: { text: 'Mama Chicken IA', style: { color: isDark ? '#60a5fa' : '#007aff', fontWeight: '600' } },
                     user: { text: 'T\u00fa', style: { color: isDark ? '#8b949e' : '#6b7280' } }
                 },
 

@@ -40,8 +40,10 @@ const buildSQLPrompt = async (question, dbDescription, dynamicSchema = null) => 
         rules = await fetchActiveRules(['INSTRUCCIONES', 'EJEMPLOS_SQL']);
     }
 
-    const TOTAL_BUDGET = 7000; // chars - safe for 8192 token context
-    const SCHEMA_MAX = 2000;   // chars - cap dynamic schema
+    // Dynamic budgets based on model capabilities
+    const useGeminiOptimizations = process.env.USE_GEMINI_OPTIMIZATIONS === 'true';
+    const TOTAL_BUDGET = useGeminiOptimizations ? 50000 : 7000; // 50K for Gemini 1M, 7K for 128K
+    const SCHEMA_MAX = useGeminiOptimizations ? 10000 : 2000;   // 10K for Gemini, 2K for standard
     
     // === BUILD PROMPT IN PRIORITY ORDER (most important FIRST for 8B models) ===
     
@@ -53,8 +55,9 @@ Solo SELECT o SHOW permitidos. NUNCA INSERT, UPDATE, DELETE, DROP.`;
     // [2] INSTRUCCIONES - Critical rules with correct table names and JOINs
     let instrSection = '';
     if (rules.INSTRUCCIONES) {
+        const instrLimit = useGeminiOptimizations ? 8000 : 1500;
         instrSection = '\n=== INSTRUCCIONES DEL SISTEMA (SEGUIR OBLIGATORIAMENTE) ===\n' + 
-            rules.INSTRUCCIONES.substring(0, 1500);
+            rules.INSTRUCCIONES.substring(0, instrLimit);
     }
     
     // [3] REGLAS HARDCODED - Compact critical rules
@@ -69,8 +72,9 @@ Solo SELECT o SHOW permitidos. NUNCA INSERT, UPDATE, DELETE, DROP.`;
     // [4] EJEMPLOS SQL - THE MOST VALUABLE PART for 8B models (learn by imitation)
     let examplesSection = '';
     if (rules.EJEMPLOS_SQL) {
+        const examplesLimit = useGeminiOptimizations ? 15000 : 2000;
         examplesSection = '\n=== EJEMPLOS SQL (COPIA ESTOS PATRONES EXACTAMENTE) ===\n' + 
-            rules.EJEMPLOS_SQL.substring(0, 2000);
+            rules.EJEMPLOS_SQL.substring(0, examplesLimit);
     }
     
     // [5] SCHEMA - Supplementary reference (LOWEST priority, trimmed first)
