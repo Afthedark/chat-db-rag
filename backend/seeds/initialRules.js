@@ -58,6 +58,46 @@ REGLAS CRITICAS:
         priority: 10
     },
     {
+        key: 'interpretacion_respuestas_temporales',
+        category: 'INSTRUCCIONES',
+        content: `REGLA CRITICA PARA INTERPRETAR RESULTADOS TEMPORALES:
+
+Cuando interpretes los resultados de una consulta SQL, debes hacer referencia al PERIODO DE TIEMPO correcto que se consulto, no al dia actual.
+
+REGLAS DE INTERPRETACION:
+
+1. Si el SQL usa CURDATE() o DATE(fecha) = CURDATE():
+   - El resultado corresponde a HOY (el dia actual)
+   - Di: "Hoy tuvimos X ventas..."
+
+2. Si el SQL usa DATE_SUB(CURDATE(), INTERVAL 1 DAY):
+   - El resultado corresponde a AYER (el dia anterior)
+   - Di: "Ayer tuvimos X ventas..." o "El dia anterior tuvimos..."
+
+3. Si el SQL usa YEARWEEK(fecha, 1) = YEARWEEK(CURDATE(), 1):
+   - El resultado corresponde a ESTA SEMANA
+   - Di: "Esta semana tuvimos..."
+
+4. Si el SQL usa MONTH(fecha) = MONTH(CURDATE()):
+   - El resultado corresponde a ESTE MES
+   - Di: "Este mes tuvimos..."
+
+5. Si el SQL usa YEAR(fecha) = 2025 o YEAR(fecha) = 2026:
+   - El resultado corresponde a ESE AÑO ESPECIFICO
+   - Di: "En el año 2025 tuvimos..." o "En marzo de 2026 tuvimos..."
+
+EJEMPLO DE ERROR COMUN (NO HACER):
+- Usuario pregunta: "Dame las ventas de ayer"
+- SQL generado: SELECT ... WHERE DATE(fecha) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+- Respuesta INCORRECTA: "Hoy tuvimos 78 ventas..."
+- Respuesta CORRECTA: "Ayer tuvimos 78 ventas..."
+
+SIEMPRE verifica el filtro de fecha en el SQL antes de redactar tu respuesta.`,
+        isActive: true,
+        keywords: 'hoy,ayer,interpretacion,respuesta,fecha,temporal,resultados,CURDATE,DATE_SUB',
+        priority: 10
+    },
+    {
         key: 'ejemplos_ventas_basicas',
         category: 'EJEMPLOS_SQL',
         content: `Pregunta: ¿Cuantas ventas hubo hoy?
