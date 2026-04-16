@@ -1,0 +1,8 @@
+streamlit>=1.56.0
+langchain>=1.2.10
+langchain-community>=0.4.1
+langchain-core>=1.2.11
+mysql-connector-python>=9.6.0
+google-generativeai>=0.8.4
+numpy>=2.2.4
+requests>=2.31.0

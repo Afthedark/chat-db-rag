@@ -1,118 +1,149 @@
-# Chat DB RAG (Two-Pass System) 🤖📊
+# Chat-With-MySQL
+Asistente de MySQL: Accede a la información de tu base de datos usando lenguaje natural. No necesitas conocimientos de SQL. Solo haz preguntas y recibe respuestas claras.
 
-Este proyecto es un asistente empresarial impulsado por IA diseñado para consultar bases de datos relacionales (MySQL) a través de lenguaje natural utilizando una arquitectura **RAG de dos pasos (Two-Pass RAG)**.
+<hr>
 
-El sistema se conecta a múltiples bases de datos de forma dinámica, captura una pregunta del usuario, genera y valida el código SQL en un primer paso, recupera los datos de manera estructurada, y finalmente interpreta (segundo paso) estos resultados devolviendo una respuesta de negocio conversacional y amigable al usuario.
+## Tabla de Contenidos
+1. [¿Qué hace?](#qué-hace)
+2. [Características](#características)
+3. [¿Cómo funciona?](#cómo-funciona)
+4. [Requisitos](#requisitos)
+5. [Instalación](#instalación)
+6. [Uso](#uso)
 
-![Dashboard Preview](https://via.placeholder.com/900x450.png?text=Dashboard+Administrativo+RAG)
+<hr>
 
-## 📋 Características Principales
+## ¿Qué hace?
+Este asistente revoluciona la interacción con bases de datos MySQL permitiendo hacer consultas en lenguaje natural. Los usuarios pueden preguntar en español (o cualquier idioma) sobre sus datos sin necesidad de conocer SQL.
 
-*   **Arquitectura MPA (Multi-Page Architecture):** Reconstrucción robusta con páginas dedicadas para Chat, Administración de Reglas y Conexiones.
-*   **Deep Chat Integration:** Interfaz de chat moderna y fluida utilizando el componente `deep-chat`, con soporte nativo para renders de Markdown y SQL.
-*   **Sistema de Temas Dual (Light/Dark Mode):** Estética premium inspirada en Qwen/Charcoal (Oscuro) y Apple Slate (Claro), totalmente gestionable por el usuario.
-*   **Two-Pass RAG Architecture:** Un modelo IA genera el código SQL y un segundo lo interpreta para mayor precisión.
-*   **Conexiones Dinámicas:** Configura y administra distintas bases de datos objetivo desde el frontend sin tocar código. Soporta puertos personalizados.
-*   **Agnóstico de IA:** Soporte para LLMs locales (Ollama) o modelos de terceros mediante el SDK oficial de OpenAI (compatible con OpenRouter).
-*   **Frontend Modular & Centralizado:** Uso de `Alpine.js` para reactividad ligera y `utils.js` para un sistema de diseño y utilidades unificado (toasts, temas, modales).
-*   **Control de Reglas de IA (Admin):** Agrega y enciende directrices (Prompts dinámicos, Schemas, Few-Shots) al vuelo desde el dashboard dedicado.
+**Ejemplo:**
+- **Pregunta:** "¿Cuántos clientes tenemos en Madrid?"
+- **Respuesta:** "Tienes 45 clientes en Madrid."
+- **SQL usado:** `SELECT COUNT(*) FROM clientes WHERE ciudad = 'Madrid';`
 
-## 🛡️ Estricta Seguridad SQL
+## Características
 
-Para salvaguardar las bases de datos transaccionales donde se consultan los datos, el proyecto incluye un validador multicapa (`sqlValidator.js`) antes de ejecutar la petición:
+### 🧠 Soporte Dual de LLM
+- **Ollama (Local):** Usa modelos locales como Llama, Gemma, DeepSeek - ¡sin costos de API!
+- **Google Gemini (API):** Usa la API de Google para respuestas avanzadas
 
-*   Solo se admiten comandos estructurados que empiezan con `SELECT`, `SHOW`, `DESCRIBE` o referencias `WITH`.
-*   Existe una capa de denegación absoluta para comandos destructivos o de escritura como `INSERT`, `UPDATE`, `DELETE`, `DROP`, `TRUNCATE`, `ALTER`.
-*   Se previene la inyección de consultas divididas (`multi-statements`) para evitar sub-rutinas disfrazadas al final de la lectura.
-*   **Se recomienda de igual manera utilizar únicamente usuarios con privilegios `READ ONLY` a nivel MySql para las conexiones objetivo.**
+### 💡 Preguntas Sugeridas
+Al conectar la base de datos, la IA genera automáticamente preguntas sugeridas basadas en el esquema de tus tablas. ¡Perfecto para usuarios que no saben por dónde empezar!
 
----
+### 🗣️ Interfaz en Español
+Interfaz completamente en español, diseñada para usuarios comunes sin conocimientos técnicos.
 
-## 🛠️ Stack Tecnológico
+### 🔒 Privacidad
+Con Ollama, todos los datos permanecen en tu computadora. Nada se envía a la nube.
 
-*   **Backend:** Node.js v18+, Express.js.
-*   **IA SDK:** OpenAI SDK (para OpenRouter) y Axios (para Ollama local).
-*   **ORMs & Data:** Sequelize (MySQL base de memoria), mysql2 (Connection Pooling dinámico a BDs objetivo).
-*   **Frontend:** HTML5, CSS Variables, Alpine.js, Bootstrap 5, PrismJS (SQL Syntax).
+## ¿Cómo funciona?
 
----
-
-## 🚀 Instalación y Despliegue Local
-
-### 1. Requisitos Previos
-* Node.js v18.x o superior (recomendado para usar `--watch`).
-* Servidor MySQL ejecutivo (XAMPP / Standalone / Docker).
-* (Opcional) Ollama instalado localmente con tu modelo base.
-
-### 2. Base de Datos de Memoria (Inicialización)
-Inicia tu gestor SQL preferido y crea la base de datos principal de configuración:
-```sql
-CREATE DATABASE ai_memory_db;
+```
+Usuario (pregunta en español)
+    ↓
+IA analiza el esquema de la BD + tu pregunta
+    ↓
+Genera consulta SQL
+    ↓
+Ejecuta SQL en MySQL
+    ↓
+IA genera respuesta en lenguaje natural
+    ↓
+Usuario recibe respuesta clara + SQL usado
 ```
 
-### 3. Configuración
-Visualiza el archivo `backend/.env` y ajusta según tu entorno (asegúrate de configurar correctamente el puerto de MySQL memory db):
+**Tecnologías utilizadas:**
+- **Streamlit:** Interfaz web tipo chat
+- **LangChain:** Conexión y extracción de esquema MySQL
+- **Ollama/Gemini:** Modelos de lenguaje para generar SQL y respuestas
 
-```env
-PORT=3000
+## Requisitos
 
-# IA Provider: 'openrouter' o 'ollama'
-AI_PROVIDER=ollama 
-OPENROUTER_API_KEY=tu_llave_aqui
-OLLAMA_URL=http://localhost:11434/api/chat
+- Python 3.11, 3.12, 3.13 o 3.14
+- MySQL Server (local o remoto)
+- Ollama (opcional, para usar modelos locales)
+- API Key de Google Gemini (opcional, para usar Gemini)
 
-# DB Memoria (Sequelize)
-MEM_DB_HOST=localhost
-MEM_DB_PORT=3301  # Cambiar según tu puerto MySQL
-MEM_DB_USER=root
-MEM_DB_PASS=
-MEM_DB_NAME=ai_memory_db
+## Instalación
+
+### 1. Clonar o descargar el proyecto
 ```
-
-### 4. Instalando e Iniciando
-Abre tu terminal dentro de `chat-db-rag/backend`:
-
-```bash
-# 1. Instalar dependencias
-npm install
-
-# 2. Correr el Seed para insertar las reglas lógicas iniciales
-npm run seed
-
-# 3. Arrancar en modo DESARROLLO (Auto-restart al cambiar archivos)
-npm run dev
-```
-
-### 5. Utilización y Rutas
-Accede desde tu navegador: 👉 [http://localhost:3000](http://localhost:3000)
-
-*   **Chat RAG (`/`)**: Interfaz principal de chateo inteligente.
-*   **Administración de Reglas (`/admin/rules`)**: Gestión de prompts de sistema y esquemas DDL.
-*   **Gestión de Bases de Datos (`/admin/databases`)**: Configuración de pools de conexión.
-
----
-
-## 📂 Estructura del Código (MPA Modular)
-
-```text
-/chat-db-rag
-├── /backend
-│   ├── /config          # Sequelize db config.
-│   ├── /controllers     # Lógica CRUD separada por responsabilidad.
-│   ├── /middleware      # Manejo de errores y ruteo central.
-│   ├── /models          # Modelos de Sequelize.
-│   ├── /routes          # Rutas API y Rutas de Servido HTML (MPA).
-│   ├── /services        # AI Service, SQL Validator y DB Connection Manager.
-│   └── server.js        # Entry point.
-├── /frontend
-│   ├── index.html       # Página de Chat Principal (Deep Chat).
-│   ├── rules.html       # Panel de Reglas AI.
-│   ├── databases.html   # Panel de Conexiones DB.
-│   ├── style.css        # Estilos Globales (Qwen/Apple inspired).
-│   └── /src             # Lógica modular Alpine.js
-│       ├── chat.js      # Controller Chat.
-│       ├── rules.js     # Controller Reglas.
-│       ├── databases.js # Controller Bases de Datos.
-│       └── utils.js     # Sistema de Temas y Utilidades Globales.
+Folder
+├── src
+│   └── app.py
+├── design
+│   └── Chat-with-SQL-Design.png
+├── requirements.txt
+├── .env
 └── README.md
 ```
+
+### 2. Crear entorno virtual
+```powershell
+# Crear entorno virtual
+python -m venv env
+
+# Activar entorno (Windows)
+env\Scripts\activate
+```
+
+### 3. Instalar dependencias
+```powershell
+pip install -r requirements.txt
+```
+
+### 4. Configurar Ollama (opcional, para modelos locales)
+Descarga e instala Ollama desde [ollama.com](https://ollama.com)
+
+Descarga modelos que quieras usar:
+```powershell
+ollama pull llama3.1:8b
+ollama pull gemma3
+ollama pull deepseek-r1:14b
+```
+
+### 5. Configurar API Key de Gemini (opcional)
+Si quieres usar Google Gemini, edita el archivo `.env`:
+```
+GEMINI_API_KEY=tu_api_key_aqui
+```
+
+## Uso
+
+### 1. Iniciar Ollama (si usas modelos locales)
+```powershell
+ollama serve
+```
+
+### 2. Ejecutar la aplicación
+```powershell
+streamlit run src/app.py
+```
+
+### 3. Configurar en la interfaz
+1. **Selecciona el proveedor de LLM:** Ollama (Local) o Gemini (API)
+2. **Elige el modelo:** (si usas Ollama, selecciona de tus modelos instalados)
+3. **Conecta tu base de datos MySQL:**
+   - Host: localhost (o IP del servidor)
+   - Port: 3306 (puerto por defecto de MySQL)
+   - User: tu_usuario_mysql
+   - Password: tu_contraseña_mysql
+   - Database: nombre_de_tu_base_de_datos
+4. **Haz clic en "Connect"**
+
+### 4. ¡Empieza a preguntar!
+Una vez conectado, verás preguntas sugeridas generadas automáticamente. Haz clic en cualquiera o escribe tu propia pregunta.
+
+**Ejemplos de preguntas:**
+- "¿Cuántos registros tenemos en total?"
+- "Muéstrame los 5 productos más vendidos"
+- "¿Quién es el cliente que más ha comprado?"
+- "Lista todas las órdenes del mes pasado"
+- "¿Cuál es el promedio de ventas por mes?"
+
+---
+
+**Nota:** La IA no almacena tus datos. Solo ve el esquema (estructura) de las tablas para generar SQL correcto.
+
+
+
