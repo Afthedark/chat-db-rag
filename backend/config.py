@@ -26,8 +26,8 @@ class Config:
     OLLAMA_TIMEOUT = int(os.getenv('OLLAMA_TIMEOUT', '120'))
     OLLAMA_MAX_RETRIES = int(os.getenv('OLLAMA_MAX_RETRIES', '3'))
     OLLAMA_RETRY_DELAY = int(os.getenv('OLLAMA_RETRY_DELAY', '2'))
-    OLLAMA_CONTEXT_LIMIT = int(os.getenv('OLLAMA_CONTEXT_LIMIT', '4096'))
-    MAX_CHAT_HISTORY = int(os.getenv('MAX_CHAT_HISTORY', '3'))
+    OLLAMA_CONTEXT_LIMIT = int(os.getenv('OLLAMA_CONTEXT_LIMIT', '8192'))
+    MAX_CHAT_HISTORY = int(os.getenv('MAX_CHAT_HISTORY', '5'))
     
     # Gemini settings
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY_ID_1', '')
