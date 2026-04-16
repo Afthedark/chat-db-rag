@@ -38,8 +38,14 @@ Este asistente revoluciona la interacción con bases de datos MySQL permitiendo 
 - **Chats Persistentes:** Crea chats vinculados a conexiones específicas con historial guardado
 - **Contraseñas Seguras:** Encriptación de contraseñas con Fernet
 
-### 🗣️ Interfaz en Español
-Interfaz completamente en español, diseñada para usuarios comunes sin conocimientos técnicos.
+### 🗣️ Respuestas en Español
+La IA responde siempre en español, independientemente de cómo formules tu pregunta. Ideal para equipos hispanohablantes.
+
+### 🎨 Interfaz Moderna
+- Diseño con Bootstrap 5
+- Sidebar con gestión de conexiones y chats
+- Selector de modelos con todos tus modelos locales
+- Soporte para múltiples proveedores (Ollama/Gemini) por chat
 
 ### 🔒 Privacidad
 Con Ollama, todos los datos permanecen en tu computadora. Nada se envía a la nube.
@@ -143,10 +149,23 @@ Descarga e instala Ollama desde [ollama.com](https://ollama.com)
 
 Descarga modelos que quieras usar:
 ```powershell
-ollama pull llama3.1:8b
-ollama pull gemma3
+ollama pull llama3.2:3b
+ollama pull phi4-mini-reasoning:3.8b
 ollama pull deepseek-r1:14b
+ollama pull qwen3.5:9b
+ollama pull llama3.1:8b
+ollama pull gemma4:e4b
 ```
+
+**Modelos disponibles en tu instalación:**
+| Modelo | Tamaño | Descripción |
+|--------|--------|-------------|
+| `llama3.2:3b` | 2.0 GB | Rápido y ligero |
+| `phi4-mini-reasoning:3.8b` | 3.2 GB | Razonamiento optimizado |
+| `deepseek-r1:14b` | 9.0 GB | Excelente para SQL complejo |
+| `qwen3.5:9b` | 6.6 GB | Buen balance calidad/velocidad |
+| `llama3.1:8b` | 4.9 GB | Versátil y confiable |
+| `gemma4:e4b` | 9.6 GB | Modelo Google actualizado |
 
 <hr>
 
@@ -372,6 +391,12 @@ Asegúrate de que Ollama esté corriendo:
 ```powershell
 ollama serve
 ```
+
+### Error: "No se cargan los modelos en el selector"
+El frontend usa una lista de respaldo con todos tus modelos locales. Si la API de Ollama no responde, se mostrarán los modelos predefinidos.
+
+### Error: "La IA responde en inglés"
+Verifica que el archivo `src/engine.py` tenga los prompts con la instrucción "IMPORTANT: Always respond in Spanish". Si modificaste el archivo, reinicia el backend.
 
 <hr>
 

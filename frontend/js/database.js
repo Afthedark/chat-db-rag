@@ -58,8 +58,21 @@ const database = {
         } else {
             ollamaContainer.classList.add('d-none');
             geminiContainer.classList.remove('d-none');
-            providerBadge.textContent = 'Gemini';
-            providerBadge.className = 'badge bg-warning ms-2';
+            // Update badge with selected Gemini model name
+            const geminiModelEl = document.getElementById('sidebar-gemini-model');
+            const modelLabel = geminiModelEl ? geminiModelEl.value : 'Gemini';
+            providerBadge.textContent = modelLabel;
+            providerBadge.className = 'badge bg-warning text-dark ms-2';
+
+            // Keep badge in sync when Gemini model changes
+            if (geminiModelEl && !geminiModelEl.dataset.listenerAdded) {
+                geminiModelEl.addEventListener('change', (e) => {
+                    if (document.getElementById('llm-provider').value === 'gemini') {
+                        providerBadge.textContent = e.target.value;
+                    }
+                });
+                geminiModelEl.dataset.listenerAdded = 'true';
+            }
         }
     },
 
@@ -82,13 +95,20 @@ const database = {
             }
         } catch (error) {
             console.error('Failed to load Ollama models:', error);
-            // Set default options if API fails
+            // Set default options with all local models if API fails
             const select = document.getElementById('ollama-model');
-            select.innerHTML = `
-                <option value="llama3.1:8b">llama3.1:8b</option>
-                <option value="gemma3">gemma3</option>
-                <option value="deepseek-r1:14b">deepseek-r1:14b</option>
-            `;
+            const models = [
+                'llama3.2:3b',
+                'phi4-mini-reasoning:3.8b',
+                'gemini-3-flash-preview:cloud',
+                'glm-5:cloud',
+                'minimax-m2-7:cloud',
+                'deepseek-r1:14b',
+                'qwen3.5:9b',
+                'llama3.1:8b',
+                'gemma4:e4b'
+            ];
+            select.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('');
         }
     },
 

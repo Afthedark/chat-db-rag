@@ -7,9 +7,10 @@ import time
 import requests
 from typing import List, Dict, Any, Optional
 
-# Try to import google.generativeai, but don't fail if not available
+# Try to import google.genai (new SDK), fall back gracefully if not installed
 try:
-    import google.generativeai as genai
+    from google import genai
+    from google.genai import types as genai_types
     GENAI_AVAILABLE = True
 except ImportError:
     GENAI_AVAILABLE = False
@@ -149,49 +150,57 @@ class OllamaClient:
 
 
 class GeminiClient:
-    """Client for Google Gemini API."""
+    """Client for Google Gemini API (google-genai SDK)."""
     
     def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or Config.GEMINI_API_KEY
+        self._api_key = api_key or Config.GEMINI_API_KEY
         self._available = GENAI_AVAILABLE
-        if self._available and self.api_key:
-            genai.configure(api_key=self.api_key)
     
     @property
     def is_available(self) -> bool:
         """Check if Gemini API is available."""
         return self._available
     
-    def query(self, prompt: str, temperature: float = 0.2, 
-              max_tokens: int = 3000, model_name: str = "gemini-1.0-pro") -> str:
+    def _build_client(self, api_key: Optional[str] = None) -> 'genai.Client':
+        """Build a Gemini client with the provided or configured API key."""
+        key = api_key or self._api_key
+        if not key:
+            raise ValueError("Gemini API key not configured. Set GEMINI_API_KEY_ID_1 in backend/.env")
+        return genai.Client(api_key=key)
+    
+    def query(self, prompt: str, temperature: float = 0.2,
+              max_tokens: int = 3000, model_name: str = "gemini-2.0-flash",
+              api_key: Optional[str] = None) -> str:
         """
-        Query Gemini API.
-        
+        Query Gemini API using the new google-genai SDK.
+
         Args:
             prompt: Text prompt to send
             temperature: Sampling temperature
             max_tokens: Maximum output tokens
             model_name: Gemini model to use
-            
+            api_key: Override API key (optional)
+
         Returns:
             Model response text or error message
         """
         if not self._available:
-            return "Error: Gemini API not available. Install google-generativeai package."
-        
+            return "Error: Gemini SDK not installed. Run: pip install google-genai"
+
         try:
-            generation_config = {
-                "temperature": temperature,
-                "top_p": 1,
-                "top_k": 1,
-                "max_output_tokens": max_tokens
-            }
-            model = genai.GenerativeModel(
-                model_name=model_name,
-                generation_config=generation_config
+            client = self._build_client(api_key)
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=genai_types.GenerateContentConfig(
+                    temperature=temperature,
+                    max_output_tokens=max_tokens,
+                )
             )
-            response = model.generate_content(prompt)
-            return response.text if response.text else "Error: Empty response from Gemini"
+            text = response.text
+            return text if text else "Error: Empty response from Gemini"
+        except ValueError as e:
+            return f"Error: {str(e)}"
         except Exception as e:
             return f"Error with Gemini: {str(e)}"
 
@@ -223,7 +232,7 @@ class LLMManager:
         if provider == "ollama":
             return self.ollama.get_available_models()
         elif provider == "gemini" and self.gemini.is_available:
-            return ["gemini-1.0-pro", "gemini-1.5-flash", "gemini-1.5-pro"]
+            return ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-pro-exp"]
         return []
     
     def query(self, provider: str, model: str, messages: List[Dict[str, str]], 
@@ -246,12 +255,10 @@ class LLMManager:
         
         elif provider == "gemini":
             if not self.gemini.is_available:
-                return "Error: Gemini not available"
-            if api_key:
-                genai.configure(api_key=api_key)
-            # Convert messages to prompt for Gemini
+                return "Error: Gemini SDK not installed. Run: pip install google-genai"
+            # Convert messages list to a single concatenated prompt for Gemini
             prompt = "\n".join([m.get("content", "") for m in messages])
-            return self.gemini.query(prompt, temperature)
+            return self.gemini.query(prompt, temperature, api_key=api_key)
         
         return "Error: Unknown provider"
 

@@ -98,6 +98,82 @@ const chats = {
         // BUG 4 FIX: Only one instance is created here, not triggered by data-bs-toggle too
         const modal = new bootstrap.Modal(document.getElementById('newChatModal'));
         modal.show();
+
+        // Load real Ollama models and setup provider switch listener
+        this._setupModalProviderListener();
+        this._loadModalOllamaModels();
+    },
+
+    /**
+     * Setup the provider change listener inside the modal
+     */
+    _setupModalProviderListener() {
+        const providerSelect = document.getElementById('new-chat-provider');
+        if (!providerSelect) return;
+        // Clone node to remove any previous listeners
+        const fresh = providerSelect.cloneNode(true);
+        providerSelect.parentNode.replaceChild(fresh, providerSelect);
+        fresh.addEventListener('change', (e) => this._handleModalProviderChange(e.target.value));
+        // Fire immediately to sync current value
+        this._handleModalProviderChange(fresh.value);
+    },
+
+    /**
+     * Toggle Ollama / Gemini panels inside the modal
+     * @param {string} provider - 'ollama' | 'gemini'
+     */
+    _handleModalProviderChange(provider) {
+        const ollamaPanel = document.getElementById('new-chat-ollama-container');
+        const geminiPanel = document.getElementById('new-chat-gemini-container');
+        if (!ollamaPanel || !geminiPanel) return;
+
+        if (provider === 'gemini') {
+            ollamaPanel.classList.add('d-none');
+            geminiPanel.classList.remove('d-none');
+        } else {
+            ollamaPanel.classList.remove('d-none');
+            geminiPanel.classList.add('d-none');
+        }
+    },
+
+    /**
+     * Load available Ollama models from the backend API into the modal selector
+     */
+    async _loadModalOllamaModels() {
+        const select = document.getElementById('new-chat-ollama-model');
+        if (!select) return;
+        try {
+            const response = await api.models.getOllamaModels();
+            if (response.data.success && response.data.models.length > 0) {
+                select.innerHTML = response.data.models
+                    .map(m => `<option value="${m}">${m}</option>`)
+                    .join('');
+            } else {
+                // Fallback to defaults with all local models
+                select.innerHTML = this._getLocalModelsOptions();
+            }
+        } catch {
+            // Network error: use defaults with all local models
+            select.innerHTML = this._getLocalModelsOptions();
+        }
+    },
+
+    /**
+     * Get HTML options for all local Ollama models
+     */
+    _getLocalModelsOptions() {
+        const models = [
+            'llama3.2:3b',
+            'phi4-mini-reasoning:3.8b',
+            'gemini-3-flash-preview:cloud',
+            'glm-5:cloud',
+            'minimax-m2-7:cloud',
+            'deepseek-r1:14b',
+            'qwen3.5:9b',
+            'llama3.1:8b',
+            'gemma4:e4b'
+        ];
+        return models.map(m => `<option value="${m}">${m}</option>`).join('');
     },
 
     /**
@@ -107,10 +183,16 @@ const chats = {
         const connectionId = document.getElementById('new-chat-connection').value;
         const title = document.getElementById('new-chat-title').value;
         const provider = document.getElementById('new-chat-provider').value;
-        // MEJORA 4 FIX: 'gemini-1.0-pro' is deprecated; use 'gemini-pro' or let backend decide
-        const modelName = provider === 'ollama'
-            ? document.getElementById('new-chat-ollama-model').value
-            : 'gemini-pro';
+
+        // Read model and API key based on selected provider
+        let modelName, apiKey;
+        if (provider === 'ollama') {
+            modelName = document.getElementById('new-chat-ollama-model').value || 'llama3.1:8b';
+            apiKey = null;
+        } else {
+            modelName = document.getElementById('new-chat-gemini-model').value || 'gemini-2.0-flash';
+            apiKey = document.getElementById('new-chat-gemini-key').value.trim() || null;
+        }
 
         if (!connectionId) {
             app.showToast('Please select a database connection', 'warning');
@@ -124,7 +206,8 @@ const chats = {
                 connection_id: parseInt(connectionId),
                 title: title || undefined,
                 provider,
-                model_name: modelName
+                model_name: modelName,
+                api_key: apiKey || undefined
             });
 
             if (response.data.success) {

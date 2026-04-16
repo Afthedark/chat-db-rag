@@ -89,7 +89,9 @@ def get_casual_response(question: str, provider: str = "ollama",
     template = f"""You are a friendly MySQL database assistant. The user just said: "{question}"
     
 Respond in a warm, conversational way. Introduce yourself briefly as a database assistant and offer to help with their database questions.
-Keep your response short (2-3 sentences max) and friendly."""
+Keep your response short (2-3 sentences max) and friendly.
+
+IMPORTANT: Always respond in Spanish (español)."""
 
     messages = [{"role": "user", "content": template}]
     return llm_manager.query(provider, model_name, messages, temperature=0.7, api_key=api_key)
@@ -178,7 +180,9 @@ User question: {question}
 SQL Query: <SQL>{sql_query}</SQL>
 SQL Response: {sql_results}
 
-Provide a clear, natural language answer to the user's question based on the SQL results."""
+Provide a clear, natural language answer to the user's question based on the SQL results.
+
+IMPORTANT: Always respond in Spanish (español)."""
 
     messages = [{"role": "user", "content": template}]
     return llm_manager.query(provider, model_name, messages, temperature=0.2, api_key=api_key)
