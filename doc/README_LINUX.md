@@ -6,7 +6,7 @@ Asistente de MySQL con persistencia para Linux. Accede a la información de tus 
 
 ## Tabla de Contenidos
 1. [Requisitos](#requisitos)
-2. [Instalación en Linux](#instalación-en-linux)
+2. [Instalación en distro Linux](#instalación-en-linux)
 3. [Configuración](#configuración)
 4. [Uso](#uso)
 5. [Servicios Systemd](#servicios-systemd)
