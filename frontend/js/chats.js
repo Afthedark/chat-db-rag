@@ -110,29 +110,53 @@ const chats = {
     _setupModalProviderListener() {
         const providerSelect = document.getElementById('new-chat-provider');
         if (!providerSelect) return;
-        // Clone node to remove any previous listeners
+        
+        // Reset to Ollama as default
+        providerSelect.value = 'ollama';
+        
+        // Remove existing listeners by cloning
         const fresh = providerSelect.cloneNode(true);
         providerSelect.parentNode.replaceChild(fresh, providerSelect);
+        
+        // Add change listener
         fresh.addEventListener('change', (e) => this._handleModalProviderChange(e.target.value));
-        // Fire immediately to sync current value
+        
+        // Fire immediately to show correct panel
         this._handleModalProviderChange(fresh.value);
     },
 
     /**
-     * Toggle Ollama / Gemini panels inside the modal
-     * @param {string} provider - 'ollama' | 'gemini'
+     * Toggle provider panels inside the modal
+     * @param {string} provider - 'ollama' | 'gemini' | 'openrouter'
      */
     _handleModalProviderChange(provider) {
+        console.log('[Chats] Provider changed to:', provider);
+        
         const ollamaPanel = document.getElementById('new-chat-ollama-container');
         const geminiPanel = document.getElementById('new-chat-gemini-container');
-        if (!ollamaPanel || !geminiPanel) return;
+        const openrouterPanel = document.getElementById('new-chat-openrouter-container');
+        
+        console.log('[Chats] Panels found:', { ollama: !!ollamaPanel, gemini: !!geminiPanel, openrouter: !!openrouterPanel });
+        
+        if (!ollamaPanel || !geminiPanel || !openrouterPanel) {
+            console.error('[Chats] Some panels not found in DOM');
+            return;
+        }
+
+        // Hide all panels first
+        ollamaPanel.classList.add('d-none');
+        geminiPanel.classList.add('d-none');
+        openrouterPanel.classList.add('d-none');
 
         if (provider === 'gemini') {
-            ollamaPanel.classList.add('d-none');
+            console.log('[Chats] Showing Gemini panel');
             geminiPanel.classList.remove('d-none');
+        } else if (provider === 'openrouter') {
+            console.log('[Chats] Showing OpenRouter panel');
+            openrouterPanel.classList.remove('d-none');
         } else {
+            console.log('[Chats] Showing Ollama panel');
             ollamaPanel.classList.remove('d-none');
-            geminiPanel.classList.add('d-none');
         }
     },
 
@@ -189,9 +213,13 @@ const chats = {
         if (provider === 'ollama') {
             modelName = document.getElementById('new-chat-ollama-model').value || 'llama3.1:8b';
             apiKey = null;
-        } else {
-            modelName = document.getElementById('new-chat-gemini-model').value || 'gemini-2.0-flash';
+        } else if (provider === 'gemini') {
+            modelName = document.getElementById('new-chat-gemini-model').value || 'gemini-2.5-flash';
             apiKey = document.getElementById('new-chat-gemini-key').value.trim() || null;
+        } else if (provider === 'openrouter') {
+            // OpenRouter: model and API key are configured in backend/.env
+            modelName = null; // Backend uses OPENROUTER_DEFAULT_MODEL
+            apiKey = null;    // Backend uses OPENROUTER_API_KEY
         }
 
         if (!connectionId) {

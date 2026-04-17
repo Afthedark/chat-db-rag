@@ -92,6 +92,7 @@
                             <select class="form-select form-select-sm" id="llm-provider">
                                 <option value="ollama">Ollama (Local)</option>
                                 <option value="gemini">Google Gemini (API)</option>
+                                <option value="openrouter">OpenRouter (API)</option>
                             </select>
                         </div>
                         <!-- Ollama sidebar panel -->
@@ -121,6 +122,22 @@
                             <small class="text-muted d-block">
                                 <i class="fas fa-key"></i>
                                 <a href="https://aistudio.google.com" target="_blank" class="text-muted">Obtener API Key gratuita</a>
+                            </small>
+                        </div>
+                        <!-- OpenRouter sidebar panel -->
+                        <div class="d-none" id="openrouter-container">
+                            <div class="mb-1">
+                                <small class="text-muted d-block">
+                                    <i class="fas fa-robot"></i> Modelo: <span class="fw-semibold">Configurado en servidor</span>
+                                </small>
+                            </div>
+                            <small class="text-muted d-block">
+                                <i class="fas fa-key"></i> API Key en <code>backend/.env</code>
+                            </small>
+                            <small class="text-muted d-block mt-1">
+                                <a href="https://openrouter.ai/keys" target="_blank" class="text-muted">
+                                    <i class="fas fa-external-link-alt"></i> Obtener API Key
+                                </a>
                             </small>
                         </div>
                     </div>
@@ -211,10 +228,11 @@
                         <select class="form-select" id="new-chat-provider">
                             <option value="ollama">Ollama (Local)</option>
                             <option value="gemini">Google Gemini (API)</option>
+                            <option value="openrouter">OpenRouter (API)</option>
                         </select>
                     </div>
                     <!-- Ollama model panel -->
-                    <div id="new-chat-ollama-container">
+                    <div id="new-chat-ollama-container" class="d-none">
                         <div class="mb-3">
                             <label class="form-label fw-semibold">
                                 <i class="fas fa-robot text-info me-1"></i> Ollama Model
@@ -249,6 +267,32 @@
                             <div class="form-text">
                                 <i class="fas fa-shield-alt"></i> Si ya pusiste la key en <code>backend/.env</code>, déjalo vacío.
                                 <a href="https://aistudio.google.com" target="_blank">Obtener API Key gratis →</a>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- OpenRouter panel -->
+                    <div id="new-chat-openrouter-container" class="d-none">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-robot text-success me-1"></i> OpenRouter Model
+                            </label>
+                            <div class="form-control bg-light">
+                                <span class="text-muted">Configurado en servidor (backend/.env)</span>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle"></i> El modelo se configura en la variable <code>OPENROUTER_DEFAULT_MODEL</code>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-key text-success me-1"></i> API Key
+                            </label>
+                            <div class="form-control bg-light">
+                                <span class="text-muted">Configurada en backend/.env</span>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-shield-alt"></i> La API key se lee desde <code>OPENROUTER_API_KEY</code>
+                                <a href="https://openrouter.ai/keys" target="_blank">Obtener API Key →</a>
                             </div>
                         </div>
                     </div>

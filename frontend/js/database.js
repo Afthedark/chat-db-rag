@@ -48,15 +48,19 @@ const database = {
     handleProviderChange(provider) {
         const ollamaContainer = document.getElementById('ollama-models-container');
         const geminiContainer = document.getElementById('gemini-key-container');
+        const openrouterContainer = document.getElementById('openrouter-container');
         const providerBadge = document.getElementById('provider-badge');
+
+        // Hide all containers first
+        ollamaContainer.classList.add('d-none');
+        if (geminiContainer) geminiContainer.classList.add('d-none');
+        if (openrouterContainer) openrouterContainer.classList.add('d-none');
 
         if (provider === 'ollama') {
             ollamaContainer.classList.remove('d-none');
-            geminiContainer.classList.add('d-none');
             providerBadge.textContent = 'Ollama';
             providerBadge.className = 'badge bg-info ms-2';
-        } else {
-            ollamaContainer.classList.add('d-none');
+        } else if (provider === 'gemini') {
             geminiContainer.classList.remove('d-none');
             // Update badge with selected Gemini model name
             const geminiModelEl = document.getElementById('sidebar-gemini-model');
@@ -73,6 +77,10 @@ const database = {
                 });
                 geminiModelEl.dataset.listenerAdded = 'true';
             }
+        } else if (provider === 'openrouter') {
+            openrouterContainer.classList.remove('d-none');
+            providerBadge.textContent = 'OpenRouter';
+            providerBadge.className = 'badge bg-success ms-2';
         }
     },
 

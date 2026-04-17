@@ -205,18 +205,103 @@ class GeminiClient:
             return f"Error with Gemini: {str(e)}"
 
 
+class OpenRouterClient:
+    """Client for OpenRouter API - Unified access to multiple LLM providers."""
+    
+    def __init__(self):
+        self.api_key = os.getenv('OPENROUTER_API_KEY')
+        self.default_model = os.getenv('OPENROUTER_DEFAULT_MODEL', 'openai/gpt-4o-mini')
+        self.site_url = os.getenv('OPENROUTER_SITE_URL', 'http://localhost:3000')
+        self.site_name = os.getenv('OPENROUTER_SITE_NAME', 'Chat-DB-RAG')
+        self.base_url = 'https://openrouter.ai/api/v1/chat/completions'
+    
+    @property
+    def is_available(self) -> bool:
+        """Check if OpenRouter is configured."""
+        return bool(self.api_key and self.api_key.startswith('sk-or-v1-'))
+    
+    def query(self, messages: List[Dict[str, str]], temperature: float = 0.2,
+              model: Optional[str] = None) -> str:
+        """
+        Query OpenRouter API.
+        
+        Args:
+            messages: List of message dicts with 'role' and 'content'
+            temperature: Sampling temperature
+            model: Model name (uses default from .env if not specified)
+            
+        Returns:
+            Model response text or error message
+        """
+        if not self.is_available:
+            return "Error: OpenRouter API key not configured. Set OPENROUTER_API_KEY in backend/.env"
+        
+        model = model or self.default_model
+        
+        try:
+            print(f"[OpenRouter] Sending request to model: {model}")
+            
+            response = requests.post(
+                self.base_url,
+                headers={
+                    'Authorization': f'Bearer {self.api_key}',
+                    'HTTP-Referer': self.site_url,
+                    'X-OpenRouter-Title': self.site_name,
+                    'Content-Type': 'application/json',
+                },
+                json={
+                    'model': model,
+                    'messages': messages,
+                    'temperature': temperature,
+                },
+                timeout=120
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                content = data.get('choices', [{}])[0].get('message', {}).get('content', '')
+                if not content:
+                    return "Error: OpenRouter returned empty response"
+                print(f"[OpenRouter] Success! Response length: {len(content)} chars")
+                return content
+            elif response.status_code == 429:
+                error_data = response.json()
+                error_msg = error_data.get('error', {}).get('message', 'Rate limit exceeded')
+                return f"Error: {error_msg}"
+            else:
+                error_msg = f"Error: OpenRouter returned status {response.status_code}"
+                try:
+                    error_data = response.json()
+                    if 'error' in error_data:
+                        error_msg += f" - {error_data['error'].get('message', '')}"
+                except:
+                    pass
+                print(f"[OpenRouter] {error_msg}")
+                return error_msg
+                
+        except requests.exceptions.Timeout:
+            return "Error: OpenRouter request timed out after 120 seconds"
+        except requests.exceptions.ConnectionError:
+            return "Error: Cannot connect to OpenRouter API"
+        except Exception as e:
+            return f"Error with OpenRouter: {str(e)}"
+
+
 class LLMManager:
     """Manages LLM interactions across different providers."""
     
     def __init__(self):
         self.ollama = OllamaClient()
         self.gemini = GeminiClient()
+        self.openrouter = OpenRouterClient()
     
     def get_available_providers(self) -> List[str]:
         """Get list of available LLM providers."""
         providers = ["ollama"]
         if self.gemini.is_available:
             providers.append("gemini")
+        if self.openrouter.is_available:
+            providers.append("openrouter")
         return providers
     
     def get_available_models(self, provider: str) -> List[str]:
@@ -224,7 +309,7 @@ class LLMManager:
         Get available models for a provider.
         
         Args:
-            provider: Provider name ('ollama' or 'gemini')
+            provider: Provider name ('ollama', 'gemini', or 'openrouter')
             
         Returns:
             List of model names
@@ -232,7 +317,10 @@ class LLMManager:
         if provider == "ollama":
             return self.ollama.get_available_models()
         elif provider == "gemini" and self.gemini.is_available:
-            return ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-pro-exp"]
+            return ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-flash-lite-preview-09-2025"]
+        elif provider == "openrouter" and self.openrouter.is_available:
+            # Return the configured default model
+            return [self.openrouter.default_model]
         return []
     
     def query(self, provider: str, model: str, messages: List[Dict[str, str]], 
@@ -241,9 +329,9 @@ class LLMManager:
         Query LLM with unified interface.
         
         Args:
-            provider: Provider name ('ollama' or 'gemini')
+            provider: Provider name ('ollama', 'gemini', or 'openrouter')
             model: Model name
-            messages: List of message dicts (for Ollama) or single prompt (for Gemini)
+            messages: List of message dicts (for Ollama/OpenRouter) or single prompt (for Gemini)
             temperature: Sampling temperature
             api_key: API key for cloud providers
             
@@ -259,6 +347,11 @@ class LLMManager:
             # Convert messages list to a single concatenated prompt for Gemini
             prompt = "\n".join([m.get("content", "") for m in messages])
             return self.gemini.query(prompt, temperature, api_key=api_key)
+        
+        elif provider == "openrouter":
+            # For OpenRouter, model parameter is optional (uses default from .env)
+            # We pass None to let OpenRouterClient use OPENROUTER_DEFAULT_MODEL
+            return self.openrouter.query(messages, temperature, model=None)
         
         return "Error: Unknown provider"
 
