@@ -261,6 +261,29 @@ python -m http.server 3000
 
 Abre tu navegador en `http://localhost:3000`
 
+### 4. Compartir en red local (opcional)
+
+Para acceder desde otras computadoras en tu misma red WiFi/Ethernet:
+
+**Terminal 1 - Backend (escuchar en todas las IPs):**
+```powershell
+cd backend
+$env:FLASK_HOST="0.0.0.0"; python app.py
+```
+
+**Terminal 2 - Frontend (escuchar en todas las IPs):**
+```powershell
+cd frontend
+python -m http.server 3000 --bind 0.0.0.0
+```
+
+**Desde otra computadora en la red:**
+Abre el navegador y ve a: `http://IP_DEL_SERVIDOR:3000`
+
+Ejemplo: `http://192.168.1.50:3000`
+
+> **Nota:** Para saber tu IP, ejecuta `ipconfig` en Windows y busca "IPv4 Address"
+
 ### 4. Usar la aplicación
 
 #### Paso 1: Agregar una conexión
