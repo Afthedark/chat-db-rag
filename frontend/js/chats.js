@@ -301,6 +301,9 @@ const chats = {
                 document.getElementById('current-chat-title').textContent = chatData.title;
                 document.getElementById('current-chat-db').textContent = chatData.database_name || 'No database';
                 
+                // Update provider badge in header
+                this.updateProviderBadge(chatData.config);
+                
                 // Enable chat input after selecting chat
                 if (typeof chat !== 'undefined') {
                     chat.enableInput();
@@ -340,6 +343,9 @@ const chats = {
                     const dbEl = document.getElementById('current-chat-db');
                     if (titleEl) titleEl.textContent = 'Ningún chat seleccionado';
                     if (dbEl) dbEl.textContent = 'Crea o selecciona un chat para comenzar';
+                    
+                    // Reset provider badge
+                    this.updateProviderBadge(null);
                 }
                 await this.loadChats();
             } else {
@@ -356,6 +362,47 @@ const chats = {
      */
     getCurrentId() {
         return this.currentChatId;
+    },
+
+    /**
+     * Update the provider badge in the header based on chat config
+     * @param {Object} config - Chat configuration with provider info
+     */
+    updateProviderBadge(config) {
+        const badge = document.getElementById('provider-badge');
+        if (!badge) return;
+
+        if (!config || !config.provider) {
+            badge.textContent = 'Selecciona un chat';
+            badge.className = 'badge bg-secondary ms-2';
+            return;
+        }
+
+        const provider = config.provider;
+        let providerLabel = provider.charAt(0).toUpperCase() + provider.slice(1);
+        let badgeClass = 'badge ms-2';
+
+        // Set badge color based on provider
+        switch (provider) {
+            case 'ollama':
+                badgeClass += ' bg-info';
+                break;
+            case 'gemini':
+                badgeClass += ' bg-warning text-dark';
+                // Add model name if available
+                if (config.model_name) {
+                    providerLabel = config.model_name;
+                }
+                break;
+            case 'openrouter':
+                badgeClass += ' bg-success';
+                break;
+            default:
+                badgeClass += ' bg-secondary';
+        }
+
+        badge.textContent = providerLabel;
+        badge.className = badgeClass;
     },
 
     /**

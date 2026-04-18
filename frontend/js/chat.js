@@ -140,12 +140,10 @@ const chat = {
         app.showLoading('Generating response...');
 
         try {
-            // BUG 5 FIX: use the persistent chat route when a chat is selected
+            // Use the persistent chat route when a chat is selected
             if (activeChatId) {
-                const apiKey = document.getElementById('gemini-api-key')?.value || null;
                 const response = await api.chats.send(activeChatId, {
-                    message,
-                    api_key: apiKey || null
+                    message
                 });
 
                 if (response.data.success) {
@@ -159,32 +157,9 @@ const chat = {
                     this.addMessage('assistant', `Error: ${response.data.error}`, true, true);
                 }
             } else {
-                // Fallback: legacy route (no persistent chat selected)
-                const provider = document.getElementById('llm-provider').value;
-                const modelName = provider === 'ollama'
-                    ? document.getElementById('ollama-model').value
-                    : 'gemini-pro';
-                const apiKey = provider === 'gemini'
-                    ? document.getElementById('gemini-api-key').value
-                    : null;
-
-                const response = await api.chat.sendMessage({
-                    message,
-                    provider,
-                    model_name: modelName,
-                    api_key: apiKey || undefined
-                });
-
-                if (response.data.success) {
-                    const data = response.data;
-                    if (data.type === 'sql') {
-                        this.addAIResponse(data.message, data.sql, data.sql_results);
-                    } else {
-                        this.addMessage('assistant', data.message, true);
-                    }
-                } else {
-                    this.addMessage('assistant', `Error: ${response.data.error}`, true, true);
-                }
+                // No chat selected - this should not happen as UI prevents this
+                app.showToast('Por favor selecciona o crea un chat primero', 'warning');
+                return;
             }
         } catch (error) {
             console.error('Failed to send message:', error);

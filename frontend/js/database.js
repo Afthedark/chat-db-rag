@@ -32,92 +32,26 @@ const database = {
             btnClear.addEventListener('click', () => chat.clearHistory());
         }
 
-        // Provider selection
-        const providerSelect = document.getElementById('llm-provider');
-        if (providerSelect) {
-            providerSelect.addEventListener('change', (e) => {
-                this.handleProviderChange(e.target.value);
-            });
-        }
+        // NOTE: LLM Provider selection has been moved to the "New Chat" modal
+        // The sidebar provider section has been removed as it's redundant
+        // Provider configuration is now done per-chat via the modal
     },
 
     /**
-     * Handle LLM provider change
-     * @param {string} provider - Selected provider
+     * NOTE: handleProviderChange() has been removed.
+     * Provider selection is now done per-chat via the "New Chat" modal.
+     * The sidebar provider section has been removed as it's redundant.
      */
-    handleProviderChange(provider) {
-        const ollamaContainer = document.getElementById('ollama-models-container');
-        const geminiContainer = document.getElementById('gemini-key-container');
-        const openrouterContainer = document.getElementById('openrouter-container');
-        const providerBadge = document.getElementById('provider-badge');
-
-        // Hide all containers first
-        ollamaContainer.classList.add('d-none');
-        if (geminiContainer) geminiContainer.classList.add('d-none');
-        if (openrouterContainer) openrouterContainer.classList.add('d-none');
-
-        if (provider === 'ollama') {
-            ollamaContainer.classList.remove('d-none');
-            providerBadge.textContent = 'Ollama';
-            providerBadge.className = 'badge bg-info ms-2';
-        } else if (provider === 'gemini') {
-            geminiContainer.classList.remove('d-none');
-            // Update badge with selected Gemini model name
-            const geminiModelEl = document.getElementById('sidebar-gemini-model');
-            const modelLabel = geminiModelEl ? geminiModelEl.value : 'Gemini';
-            providerBadge.textContent = modelLabel;
-            providerBadge.className = 'badge bg-warning text-dark ms-2';
-
-            // Keep badge in sync when Gemini model changes
-            if (geminiModelEl && !geminiModelEl.dataset.listenerAdded) {
-                geminiModelEl.addEventListener('change', (e) => {
-                    if (document.getElementById('llm-provider').value === 'gemini') {
-                        providerBadge.textContent = e.target.value;
-                    }
-                });
-                geminiModelEl.dataset.listenerAdded = 'true';
-            }
-        } else if (provider === 'openrouter') {
-            openrouterContainer.classList.remove('d-none');
-            providerBadge.textContent = 'OpenRouter';
-            providerBadge.className = 'badge bg-success ms-2';
-        }
-    },
 
     /**
      * Load available Ollama models
+     * NOTE: This function is kept for backward compatibility but the sidebar
+     * model selector has been removed. Models are now selected in the "New Chat" modal.
      */
     async loadOllamaModels() {
-        try {
-            const response = await api.models.getOllamaModels();
-            if (response.data.success) {
-                const select = document.getElementById('ollama-model');
-                select.innerHTML = '';
-                
-                response.data.models.forEach(model => {
-                    const option = document.createElement('option');
-                    option.value = model;
-                    option.textContent = model;
-                    select.appendChild(option);
-                });
-            }
-        } catch (error) {
-            console.error('Failed to load Ollama models:', error);
-            // Set default options with all local models if API fails
-            const select = document.getElementById('ollama-model');
-            const models = [
-                'llama3.2:3b',
-                'phi4-mini-reasoning:3.8b',
-                'gemini-3-flash-preview:cloud',
-                'glm-5:cloud',
-                'minimax-m2-7:cloud',
-                'deepseek-r1:14b',
-                'qwen3.5:9b',
-                'llama3.1:8b',
-                'gemma4:e4b'
-            ];
-            select.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('');
-        }
+        // This function is kept for compatibility but no longer loads into sidebar
+        // Ollama models are now loaded in the "New Chat" modal via chats._loadModalOllamaModels()
+        console.log('loadOllamaModels: Sidebar provider section removed, models loaded in modal');
     },
 
     /**

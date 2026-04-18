@@ -93,65 +93,7 @@
                         </button>
                     </div>
                     
-                    <!-- LLM Provider Section -->
-                    <div class="section-card">
-                        <h6 class="section-title">
-                            <i class="fas fa-brain"></i> Proveedor LLM
-                        </h6>
-                        <div class="mb-2">
-                            <select class="form-select form-select-sm" id="llm-provider">
-                                <option value="ollama">Ollama (Local)</option>
-                                <option value="gemini">Google Gemini (API)</option>
-                                <option value="openrouter">OpenRouter (API)</option>
-                            </select>
-                        </div>
-                        <!-- Ollama sidebar panel -->
-                        <div id="ollama-models-container">
-                            <div class="mb-1">
-                                <select class="form-select form-select-sm" id="ollama-model">
-                                    <option value="">Loading models...</option>
-                                </select>
-                            </div>
-                            <small class="text-muted d-block">
-                                <i class="fas fa-circle-info"></i> Ollama en localhost:11434
-                            </small>
-                        </div>
-                        <!-- Gemini sidebar panel -->
-                        <div class="d-none" id="gemini-key-container">
-                            <div class="mb-1">
-                                <select class="form-select form-select-sm" id="sidebar-gemini-model">
-                                    <option value="gemini-2.5-flash">gemini-2.5-flash ⚡ (recomendado)</option>
-                                    <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite 💰 (económico)</option>
-                                    <option value="gemini-2.5-flash-lite-preview-09-2025">gemini-2.5-flash-lite-preview 🧪 (preview)</option>
-                                </select>
-                            </div>
-                            <div class="mb-1">
-                                <input type="password" class="form-control form-control-sm" id="gemini-api-key"
-                                       placeholder="API Key (vacío si está en .env)">
-                            </div>
-                            <small class="text-muted d-block">
-                                <i class="fas fa-key"></i>
-                                <a href="https://aistudio.google.com" target="_blank" class="text-muted">Obtener API Key gratuita</a>
-                            </small>
-                        </div>
-                        <!-- OpenRouter sidebar panel -->
-                        <div class="d-none" id="openrouter-container">
-                            <div class="mb-1">
-                                <small class="text-muted d-block">
-                                    <i class="fas fa-robot"></i> Modelo: <span class="fw-semibold">Configurado en servidor</span>
-                                </small>
-                            </div>
-                            <small class="text-muted d-block">
-                                <i class="fas fa-key"></i> API Key en <code>backend/.env</code>
-                            </small>
-                            <small class="text-muted d-block mt-1">
-                                <a href="https://openrouter.ai/keys" target="_blank" class="text-muted">
-                                    <i class="fas fa-external-link-alt"></i> Obtener API Key
-                                </a>
-                            </small>
-                        </div>
-                    </div>
-                    
+
                     <!-- Current Chat Info -->
                     <div class="section-card">
                         <h6 class="section-title">
@@ -174,7 +116,7 @@
                     </button>
                     <h5 class="mb-0">
                         <i class="fas fa-comments"></i> Chat
-                        <span class="badge bg-info ms-2" id="provider-badge">Ollama</span>
+                        <span class="badge bg-secondary ms-2" id="provider-badge">Selecciona un chat</span>
                     </h5>
                     <div class="chat-header-actions">
                         <!-- Theme toggle will be inserted here by theme.js -->
