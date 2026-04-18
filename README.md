@@ -222,14 +222,18 @@ MAX_CHAT_HISTORY=3
 GEMINI_API_KEY_ID_1=
 
 # -----------------------------------------------------------------------------
-# CORS CONFIGURATION
+# CORS CONFIGURATION (optional - auto-configured for local network sharing)
 # -----------------------------------------------------------------------------
-CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+# The app automatically allows all origins for local network access
+# In production, restrict this to specific domains:
+# CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 ```
 
 ### Frontend
 
-No requiere configuración. El frontend se conecta automáticamente al backend en `http://localhost:5000`.
+No requiere configuración. El frontend detecta automáticamente la IP del servidor:
+- **Modo local:** Se conecta a `http://localhost:5000`
+- **Red local:** Se conecta a `http://{IP_DEL_SERVIDOR}:5000`
 
 <hr>
 
@@ -263,28 +267,45 @@ Abre tu navegador en `http://localhost:3000`
 
 ### 4. Compartir en red local (opcional)
 
-Para acceder desde otras computadoras en tu misma red WiFi/Ethernet:
+Tu aplicación ya está configurada para compartirse en la red local. El frontend detecta automáticamente la IP del servidor.
 
-**Terminal 1 - Backend (escuchar en todas las IPs):**
+#### Opción rápida - Usa el script de inicio:
+```powershell
+python start-server.py
+```
+
+Verás algo como:
+```
+============================================================
+🚀 Chat with MySQL - Network Sharing Ready
+============================================================
+
+📱 ACCESS URLs:
+   • This computer:  http://localhost:5000
+   • Other devices:  http://192.168.1.100:5000
+
+🔧 QUICK START:
+   1. Keep this window open (server running)
+   2. On other devices, open: http://192.168.1.100:5000
+   3. The app will auto-detect the correct API endpoint
+```
+
+#### Opción manual - Inicio tradicional:
 ```powershell
 cd backend
-$env:FLASK_HOST="0.0.0.0"; python app.py
+python app.py
 ```
 
-**Terminal 2 - Frontend (escuchar en todas las IPs):**
-```powershell
-cd frontend
-python -m http.server 3000 --bind 0.0.0.0
-```
+El servidor mostrará automáticamente las URLs de acceso.
 
-**Desde otra computadora en la red:**
-Abre el navegador y ve a: `http://IP_DEL_SERVIDOR:3000`
+#### Acceder desde otros dispositivos:
+1. Conecta todos los dispositivos a la **misma red WiFi**
+2. En el celular/otra PC, abre el navegador
+3. Escribe la URL que muestra el servidor: `http://192.168.X.X:5000`
 
-Ejemplo: `http://192.168.1.50:3000`
+> **Nota:** Si Windows Firewall bloquea el puerto 5000, permite Python en las reglas del firewall.
 
-> **Nota:** Para saber tu IP, ejecuta `ipconfig` en Windows y busca "IPv4 Address"
-
-### 4. Usar la aplicación
+### 5. Usar la aplicación
 
 #### Paso 1: Agregar una conexión
 1. Haz clic en **"Add Connection"**

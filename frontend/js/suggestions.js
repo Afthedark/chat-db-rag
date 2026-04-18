@@ -14,81 +14,88 @@ const suggestions = {
     
     /**
      * Suggested questions organized by category
+     * Optimized based on business_context.py rules and actual database schema
      */
     questions: {
-        "Ventas y Totales": [
-            "¿Cuál fue el total de ventas de marzo 2026?",
+        "Ventas y Facturación": [
+            "¿Cuánto vendimos hoy?",
             "¿Cuánto vendimos ayer?",
-            "Dime el monto total vendido en abril",
-            "¿Cuánto facturamos esta semana?",
-            "Total de ingresos del día de hoy",
-            "¿Cuál es el monto acumulado de ventas del mes?",
-            "Facturación total del primer trimestre 2026",
-            "¿Cuánto se vendió ayer en total?",
-            "Monto total de pedidos del 15 de abril",
-            "Promedio de ventas diarias en marzo"
+            "Total de ventas de esta semana",
+            "¿Cuál fue el total de ventas del mes pasado?",
+            "Facturación total del día de hoy",
+            "¿Cuántos pedidos facturados tenemos hoy?",
+            "Ventas no facturadas vs facturadas esta semana",
+            "Promedio de ventas por día esta semana",
+            "Comparación de ventas: hoy vs ayer",
+            "¿Cuál fue el día con más ventas esta semana?"
         ],
         "Productos más vendidos": [
-            "Dime los 5 productos más vendidos hoy",
-            "Top 10 de productos más vendidos esta semana",
-            "Dime los 10 productos más vendidos en marzo y cuánto vendió cada uno",
-            "¿Qué productos tuvieron más ventas esta semana?",
-            "Ranking de productos por cantidad vendida en abril",
-            "Los 20 ítems más populares del mes pasado",
-            "¿Cuáles son los productos estrella de esta semana?",
-            "Lista de productos ordenados por ventas (mayor a menor)",
-            "Top productos del día con sus cantidades"
+            "Top 5 productos más vendidos hoy",
+            "Top 10 productos más vendidos esta semana",
+            "¿Qué productos vendieron más ayer?",
+            "Ranking de productos del mes por cantidad",
+            "Los 10 ítems más populares de la semana",
+            "Productos más vendidos con sus cantidades",
+            "Top productos para llevar (PLL) esta semana",
+            "Productos estrella del día"
         ],
-        "Consultas por Producto": [
-            "¿Cuánto vendimos de Broaster Mixto en marzo?",
-            "Ventas del producto 'Combo Familiar' esta semana",
-            "¿Cuántos sandwiches de pollo se vendieron ayer?",
-            "Total vendido de bebidas Coca Cola 1L",
-            "¿Cuántas Alitas 6pz se vendieron en abril?",
-            "Monto total de ventas del producto 'PROMO 2 Presas'",
-            "Unidades vendidas de 'Extra Papa Grande'"
-        ],
-        "Por Categoría": [
+        "Por Categoría / Tipo": [
             "¿Cuántas bebidas vendimos hoy?",
             "Top 5 bebidas más vendidas esta semana",
-            "¿Cuántos combos se vendieron ayer?",
-            "Ventas de promociones 3x2 en abril",
-            "¿Cuántos extras de papa se vendieron?",
-            "¿Cuántos productos bañados vendimos?",
-            "Top productos bañados del mes",
-            "¿Cuántos pedidos para llevar tuvimos?",
-            "Productos PLL más vendidos"
+            "¿Cuántos combos se vendieron hoy?",
+            "Ventas de productos bañados esta semana",
+            "¿Cuántos productos para llevar (PLL) vendimos?",
+            "Top productos con extra papa",
+            "¿Cuántos combos familiares vendimos?",
+            "Ventas de promociones del día"
         ],
-        "Por Tiempo": [
-            "Ventas de los últimos 7 días",
-            "¿Cómo fueron las ventas esta semana día por día?",
-            "Comparación de ventas semana vs semana anterior",
-            "¿Qué día de la semana vendemos más?",
-            "Ventas por mes en 2026",
-            "¿Cuál fue el mejor mes de ventas?",
+        "Análisis de Pedidos": [
+            "¿Cuántos pedidos tuvimos hoy?",
+            "¿Cuántos pedidos se anularon hoy?",
+            "Monto total de anulaciones esta semana",
+            "Promedio de ítems por pedido hoy",
+            "¿Cuántos pedidos están pendientes?",
+            "Pedidos por estado: concluidos, pendientes, anulados",
+            "Ticket promedio del día"
+        ],
+        "Por Tiempo y Turno": [
+            "Ventas por hora hoy",
             "¿A qué hora vendemos más?",
-            "Ventas por turno: mañana vs tarde"
+            "Ventas del turno mañana vs turno tarde",
+            "Ventas de los últimos 7 días",
+            "Comparación: esta semana vs semana pasada",
+            "¿Qué día de la semana vendemos más?",
+            "Ventas por día de esta semana",
+            "Mejor horario de ventas del mes"
         ],
-        "Clientes y Empleados": [
-            "¿Cuántos clientes únicos tuvimos hoy?",
-            "Número de clientes nuevos esta semana",
+        "Clientes y Atención": [
+            "¿Cuántos clientes atendimos hoy?",
+            "¿Cuántos clientes nuevos esta semana?",
+            "Clientes recurrentes vs nuevos hoy",
+            "¿Cuántos pedidos para llevar vs para mesa?",
+            "Ticket promedio por cliente hoy"
+        ],
+        "Empleados y Cajas": [
             "¿Cuánto vendió cada empleado hoy?",
             "Ranking de ventas por cajero esta semana",
-            "¿Quién atendió más pedidos ayer?",
-            "Ventas por caja número 1"
+            "¿Quién atendió más pedidos hoy?",
+            "Ventas por caja número 1",
+            "Empleado con más ventas del día",
+            "Pedidos atendidos por cada empleado"
         ],
-        /*
-        "Inventario": [
-            "¿Qué productos tienen bajo stock?",
-            "Lista de ítems con menos de 10 unidades",
-            "¿Qué productos entraron al almacén hoy?",
-            "Salidas de inventario de la semana"
+        "Productos Específicos": [
+            "Buscar productos que contengan 'pollo'",
+            "Ventas de productos que contengan 'combo'",
+            "Productos más vendidos que contengan 'papa'",
+            "Buscar ventas de 'sanguchitas'",
+            "Productos bañados más vendidos",
+            "Ventas de productos con 'alitas'"
         ],
-        */
         "Estructura de Datos": [
             "¿Qué tablas hay en la base de datos?",
             "Muéstrame la estructura de la tabla pedidos",
-            "¿Qué columnas tiene la tabla items?"
+            "¿Qué columnas tiene la tabla items?",
+            "Muéstrame las tablas de clientes y empleados"
         ]
     },
 

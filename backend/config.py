@@ -32,8 +32,9 @@ class Config:
     # Gemini settings
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY_ID_1', '')
     
-    # CORS settings
-    CORS_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000']
+    # CORS settings - allow all origins for local network sharing
+    # In production, restrict this to specific domains
+    CORS_ORIGINS = "*"
     
     # SQLAlchemy settings for project persistence
     # Build DATABASE_URL from separate variables or use direct URL

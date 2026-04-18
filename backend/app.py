@@ -78,7 +78,22 @@ def health():
 
 
 if __name__ == '__main__':
-    print("Starting Chat with MySQL API server...")
-    print(f"API available at: http://localhost:5000")
-    print(f"CORS enabled for: {Config.CORS_ORIGINS}")
+    import socket
+    
+    # Get local IP address for network sharing
+    hostname = socket.gethostname()
+    local_ip = socket.getaddrinfo(hostname, None, socket.AF_INET)[0][4][0]
+    
+    print("=" * 60)
+    print("🚀 Chat with MySQL API Server Starting...")
+    print("=" * 60)
+    print(f"📍 Local access:     http://localhost:5000")
+    print(f"📍 Network access:   http://{local_ip}:5000")
+    print("-" * 60)
+    print("💡 To share with other devices on your network:")
+    print(f"   1. Ensure all devices are on the same WiFi/network")
+    print(f"   2. Open: http://{local_ip}:5000 on other devices")
+    print(f"   3. Frontend will auto-detect the correct API endpoint")
+    print("=" * 60)
+    
     app.run(debug=True, host='0.0.0.0', port=5000)
