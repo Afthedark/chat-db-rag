@@ -34,7 +34,7 @@ const connections = {
             console.error('Save button NOT found');
         }
         
-        // Test connection button
+        // Test connection button (sidebar - legacy)
         const testBtn = document.getElementById('btn-test-connection');
         if (testBtn) {
             console.log('Test button found, adding listener');
@@ -43,8 +43,17 @@ const connections = {
                 console.log('Test button clicked');
                 this.testNewConnection();
             });
-        } else {
-            console.error('Test button NOT found');
+        }
+        
+        // Test connection button (modal)
+        const testBtnModal = document.getElementById('btn-test-connection-modal');
+        if (testBtnModal) {
+            console.log('Test button (modal) found, adding listener');
+            testBtnModal.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('Test button (modal) clicked');
+                this.testNewConnection();
+            });
         }
     },
 
@@ -68,34 +77,58 @@ const connections = {
      */
     renderConnectionsList() {
         const container = document.getElementById('saved-connections-list');
+        const countBadge = document.getElementById('connections-count');
+        
+        // Update count badge
+        if (countBadge) {
+            countBadge.textContent = this.connectionsList.length;
+        }
+        
         if (!container) return;
 
         if (this.connectionsList.length === 0) {
-            container.innerHTML = '<small class="text-muted">No saved connections</small>';
+            container.innerHTML = '<small class="text-muted d-block text-center py-3">No hay conexiones guardadas</small>';
             return;
         }
 
         container.innerHTML = this.connectionsList.map(conn => `
-            <div class="connection-item mb-2 p-2 border rounded ${this.currentConnectionId === conn.id ? 'border-primary bg-light' : ''}">
+            <div class="connection-item ${this.currentConnectionId === conn.id ? 'active' : ''}">
                 <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>${conn.name}</strong>
-                        <small class="d-block text-muted">${conn.database_name} @ ${conn.host}:${conn.port}</small>
+                    <div class="overflow-hidden flex-grow-1">
+                        <div class="connection-name">${conn.name}</div>
+                        <div class="connection-details">${conn.database_name} @ ${conn.host}:${conn.port}</div>
                     </div>
                     <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary" onclick="connections.connect(${conn.id})" title="Connect">
+                        <button class="btn btn-outline-primary" onclick="connections.connect(${conn.id})" title="Conectar">
                             <i class="fas fa-plug"></i>
                         </button>
-                        <button class="btn btn-outline-secondary" onclick="connections.test(${conn.id})" title="Test">
+                        <button class="btn btn-outline-secondary" onclick="connections.test(${conn.id})" title="Probar">
                             <i class="fas fa-vial"></i>
                         </button>
-                        <button class="btn btn-outline-danger" onclick="connections.delete(${conn.id})" title="Delete">
-                            <i class="fas fa-trash"></i>
+                        <button class="btn btn-outline-danger" onclick="connections.delete(${conn.id})" title="Eliminar">
+                            <i class="fas fa-trash-alt"></i>
                         </button>
                     </div>
                 </div>
             </div>
         `).join('');
+    },
+
+    /**
+     * Show modal to create new connection
+     */
+    showNewConnectionModal() {
+        // Clear form fields
+        document.getElementById('conn-name').value = '';
+        document.getElementById('db-host').value = 'localhost';
+        document.getElementById('db-port').value = '3306';
+        document.getElementById('db-user').value = '';
+        document.getElementById('db-password').value = '';
+        document.getElementById('db-name').value = '';
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('newConnectionModal'));
+        modal.show();
     },
 
     /**

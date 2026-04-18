@@ -54,23 +54,31 @@ const chats = {
      */
     renderChatsList() {
         const container = document.getElementById('chats-list');
+        const countBadge = document.getElementById('chats-count');
+        
+        // Update count badge
+        if (countBadge) {
+            countBadge.textContent = this.chatsList.length;
+        }
+        
         if (!container) return;
 
         if (this.chatsList.length === 0) {
-            container.innerHTML = '<small class="text-muted">No chats yet. Create one to start!</small>';
+            container.innerHTML = '<small class="text-muted d-block text-center py-3">No hay chats. ¡Crea uno para comenzar!</small>';
             return;
         }
 
         container.innerHTML = this.chatsList.map(chat => `
-            <div class="chat-item mb-2 p-2 border rounded cursor-pointer ${this.currentChatId === chat.id ? 'border-primary bg-light' : ''}"
-                 onclick="chats.selectChat(${chat.id})">
+            <div class="chat-item ${this.currentChatId === chat.id ? 'active' : ''}"
+                 onclick="chats.selectChat(${chat.id})"
+                 title="${chat.title}">
                 <div class="d-flex justify-content-between align-items-center">
-                    <div class="overflow-hidden">
-                        <strong class="d-block text-truncate">${chat.title}</strong>
-                        <small class="text-muted">${chat.database_name || 'No DB'}</small>
+                    <div class="overflow-hidden flex-grow-1">
+                        <div class="chat-title">${chat.title}</div>
+                        <div class="chat-db">${chat.database_name || 'Sin base de datos'}</div>
                     </div>
-                    <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); chats.delete(${chat.id})" title="Delete">
-                        <i class="fas fa-times"></i>
+                    <button class="btn btn-sm btn-outline-danger btn-delete" onclick="event.stopPropagation(); chats.delete(${chat.id})" title="Eliminar chat">
+                        <i class="fas fa-trash-alt"></i>
                     </button>
                 </div>
             </div>
@@ -308,6 +316,14 @@ const chats = {
                 // Store current chat in session
                 document.getElementById('current-chat-title').textContent = chatData.title;
                 document.getElementById('current-chat-db').textContent = chatData.database_name || 'No database';
+                
+                // Update model info in current chat section
+                const modelEl = document.getElementById('current-chat-model');
+                if (modelEl && chatData.config) {
+                    const provider = chatData.config.provider || 'Desconocido';
+                    const modelName = chatData.config.model_name || '';
+                    modelEl.textContent = modelName ? `${provider} - ${modelName}` : provider;
+                }
                 
                 // Update provider badge in header
                 this.updateProviderBadge(chatData.config);

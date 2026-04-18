@@ -1,6 +1,6 @@
 # Chat-With-MySQL - Frontend Documentation
 
-Interfaz de usuario para el asistente de MySQL con persistencia. Frontend vanilla JavaScript con Bootstrap 5.
+Interfaz de usuario para el asistente de MySQL con persistencia. Frontend vanilla JavaScript con Bootstrap 5, tema claro/oscuro, y diseño responsive.
 
 ---
 
@@ -10,9 +10,10 @@ Interfaz de usuario para el asistente de MySQL con persistencia. Frontend vanill
 3. [Arquitectura](#arquitectura)
 4. [Módulos](#módulos)
 5. [Flujo de Datos](#flujo-de-datos)
-6. [API Client](#api-client)
-7. [Eventos](#eventos)
-8. [Solución de Problemas](#solución-de-problemas)
+6. [Características](#características)
+7. [API Client](#api-client)
+8. [Eventos](#eventos)
+9. [Solución de Problemas](#solución-de-problemas)
 
 ---
 
@@ -24,6 +25,7 @@ Interfaz de usuario para el asistente de MySQL con persistencia. Frontend vanill
 | Font Awesome | 6.4.2 | Iconos |
 | Axios | 1.6.0 | HTTP Client |
 | Vanilla JS | ES6+ | Lógica de la aplicación |
+| CSS Variables | - | Tema claro/oscuro |
 
 ---
 
@@ -33,14 +35,18 @@ Interfaz de usuario para el asistente de MySQL con persistencia. Frontend vanill
 frontend/
 ├── index.html              # Página principal
 ├── css/
-│   └── styles.css          # Estilos personalizados
+│   ├── base.css            # Estilos base y variables
+│   ├── desktop.css         # Estilos para escritorio
+│   └── mobile.css          # Estilos responsive móvil
 └── js/
     ├── api.js              # Cliente API (Axios)
     ├── app.js              # Inicialización y utilidades
     ├── chat.js             # UI del chat y mensajes
     ├── chats.js            # Gestión de chats persistentes
     ├── connections.js      # Gestión de conexiones a BD
-    └── database.js         # Configuración LLM (sidebar)
+    ├── database.js         # Configuración LLM (sidebar)
+    ├── suggestions.js      # Burbuja de sugerencias
+    └── theme.js            # Gestión de tema claro/oscuro
 ```
 
 ---
@@ -52,14 +58,17 @@ frontend/
 │              index.html                 │
 │  ┌─────────────────────────────────┐    │
 │  │           Sidebar               │    │
-│  │  - Connections (connections.js) │    │
+│  │  - Quick Actions                │    │
 │  │  - Chats (chats.js)             │    │
-│  │  - LLM Provider (database.js)   │    │
+│  │  - Connections (connections.js) │    │
+│  │  - Current Chat Info            │    │
 │  └─────────────────────────────────┘    │
 │  ┌─────────────────────────────────┐    │
 │  │         Main Content            │    │
+│  │  - Welcome Screen               │    │
 │  │  - Chat Messages (chat.js)      │    │
 │  │  - Input Area                   │    │
+│  │  - Suggestions Bubble           │    │
 │  └─────────────────────────────────┘    │
 └─────────────────────────────────────────┘
                    │
@@ -132,11 +141,13 @@ connections.currentConnectionId = null;  // Conexión activa
 - `connections.connect(id)` - Conectar a una BD
 - `connections.save()` - Guardar nueva conexión
 - `connections.test()` - Probar conexión
+- `connections.showNewConnectionModal()` - Mostrar modal nueva conexión
 
 **Eventos:**
 - Click en conexión guardada → `connections.connect(id)`
-- Click en "Save Connection" → `connections.save()`
-- Click en "Test Connection" → `connections.test()`
+- Click en "Agregar Conexión" → `connections.showNewConnectionModal()`
+- Click en "Guardar" (modal) → `connections.save()`
+- Click en "Probar" (modal) → `connections.test()`
 
 ---
 
@@ -156,13 +167,20 @@ chats.currentChatId = null;  // Chat activo
 - `chats.createChat()` - Crear chat con configuración
 - `chats.selectChat(id)` - Seleccionar y cargar chat
 - `chats.sendMessage(message)` - Enviar mensaje al chat
+- `chats.flashChatItem(id)` - Efecto visual en item de chat
+- `chats.updateProviderBadge(config)` - Actualizar badge de proveedor
 
 **Modal de Nuevo Chat:**
 - Selección de conexión (dropdown)
 - Título opcional
-- Proveedor LLM (Ollama/Gemini)
+- Proveedor LLM (Ollama/Gemini/OpenRouter)
 - Modelo específico
 - API Key (para Gemini)
+
+**Optimizaciones:**
+- Si se selecciona el mismo chat, muestra toast informativo sin recargar
+- Efecto visual de "flash" en el item del chat
+- Contador de chats en el header de la sección
 
 **Modelos Ollama disponibles:**
 ```javascript
@@ -180,43 +198,71 @@ chats.currentChatId = null;  // Chat activo
 
 ### 5. `chat.js` - UI del Chat
 
-Maneja la interfaz de mensajes y el input.
+Maneja la interfaz de mensajes, el input, y la pantalla de bienvenida.
 
 **Estado:**
 ```javascript
 chat.messagesContainer = null;
 chat.messageInput = null;
 chat.sendButton = null;
-chat.isInputEnabled = false;
+chat.welcomeScreen = null;
+chat.isProcessing = false;
 ```
 
 **Métodos principales:**
 - `chat.loadMessages(messages)` - Cargar mensajes históricos
 - `chat.addMessage(content, type)` - Agregar mensaje al UI
-- `chat.enableInput()` - Habilitar input
-- `chat.disableInput()` - Deshabilitar input
+- `chat.addAIResponse(message, sql, results)` - Agregar respuesta con SQL
+- `chat.enableInput()` - Habilitar input y mostrar chat
+- `chat.disableInput()` - Deshabilitar input y mostrar bienvenida
+- `chat.showWelcomeScreen()` - Mostrar pantalla de bienvenida
+- `chat.hideWelcomeScreen()` - Ocultar pantalla de bienvenida
 - `chat.sendMessage()` - Enviar mensaje
+- `chat.formatMessage(content)` - Formatear mensaje con código
 
 **Tipos de mensajes:**
-- `user` - Mensaje del usuario (derecha, azul)
-- `assistant` - Respuesta de la IA (izquierda, gris)
-- `sql` - Bloque de código SQL (con syntax highlighting)
+- `user` - Mensaje del usuario (derecha, gradiente)
+- `assistant` - Respuesta de la IA (izquierda, card)
+- `sql` - Bloque de código SQL (colapsable)
 
 ---
 
-### 6. `database.js` - Configuración LLM
+### 6. `database.js` - Configuración LLM (Legacy)
 
-Maneja la selección de proveedor LLM en el sidebar.
+**Nota:** La selección de proveedor LLM se ha movido al modal de "Nuevo Chat". Este módulo se mantiene por compatibilidad.
 
 **Funcionalidad:**
-- Cambiar entre Ollama y Gemini
-- Seleccionar modelo específico
-- Mostrar/ocultar campos según proveedor
-- Cargar modelos Ollama disponibles
+- Carga inicial de modelos Ollama
+- Verificación de estado de conexión
 
-**Eventos:**
-- Cambio de proveedor → `database.handleProviderChange()`
-- Cambio de modelo → Actualiza badge en header
+### 7. `suggestions.js` - Burbuja de Sugerencias
+
+Maneja la burbuja flotante de preguntas sugeridas.
+
+**Funcionalidad:**
+- Burbuja flotante con animación de pulso
+- Panel de sugerencias categorizadas
+- 50+ preguntas de ejemplo organizadas por categoría
+- Categorías: Consultas Básicas, Ventas, Productos, Clientes, Tiempo, Combinaciones
+
+**Métodos principales:**
+- `suggestions.init()` - Inicializar burbuja y panel
+- `suggestions.togglePanel()` - Mostrar/ocultar panel
+- `suggestions.useQuestion(question)` - Usar pregunta en el chat
+
+### 8. `theme.js` - Gestión de Tema
+
+Maneja el tema claro/oscuro de la aplicación.
+
+**Funcionalidad:**
+- Detección automática de preferencia del sistema
+- Persistencia en localStorage
+- Toggle en el header del chat
+
+**Métodos principales:**
+- `theme.init()` - Inicializar tema
+- `theme.toggle()` - Cambiar entre claro/oscuro
+- `theme.setTheme(themeName)` - Establecer tema específico
 
 ---
 
@@ -268,6 +314,44 @@ Maneja la selección de proveedor LLM en el sidebar.
 5. Frontend recibe respuesta
    - chat.loadMessages() con historial actualizado
 ```
+
+---
+
+## Características
+
+### Tema Claro/Oscuro
+- Toggle en el header del chat
+- Persistencia en localStorage
+- Detección automática de preferencia del sistema
+
+### Sidebar Mejorado
+- **Secciones colapsables**: Chats, Conexiones, Info del Chat
+- **Acciones rápidas**: Botón "Nuevo Chat" prominente
+- **Contadores**: Badges con cantidad de chats y conexiones
+- **Diseño optimizado**: Items compactos con hover effects
+- **Responsive**: Sidebar drawer en móvil con ancho optimizado
+
+### Pantalla de Bienvenida
+- Se muestra cuando no hay chat seleccionado
+- Instrucciones claras para el usuario
+- Indicación de usar el menú lateral
+
+### Burbuja de Sugerencias
+- Burbuja flotante con animación de pulso
+- 50+ preguntas de ejemplo categorizadas
+- Panel deslizable con categorías
+
+### Optimizaciones UX
+- **Chat Selection**: Si se clickea el mismo chat, muestra toast sin recargar
+- **Flash Effect**: Animación visual en el item del chat
+- **Provider Badge**: Muestra el proveedor y modelo del chat activo
+- **Auto-connect**: Conexión automática a la BD al seleccionar chat
+
+### Responsive Design
+- **Desktop**: Sidebar fijo de 250px
+- **Tablet**: Sidebar drawer de 70% ancho
+- **Mobile**: Sidebar drawer de 85% ancho (max 340px)
+- Touch-friendly: Botones de 44px mínimo
 
 ---
 
@@ -399,6 +483,37 @@ chats.loadChats();
 2. Crear y seleccionar un chat
 3. El input se habilita automáticamente al seleccionar chat
 
+### Tema no persiste entre sesiones
+
+**Causa:** localStorage no está disponible o fue limpiado.
+
+**Solución:**
+```javascript
+// Verificar en consola
+localStorage.getItem('theme');
+
+// Establecer manualmente
+localStorage.setItem('theme', 'dark');
+```
+
+### Sidebar no abre en móvil
+
+**Causa:** JavaScript no cargó o error en el event listener.
+
+**Solución:**
+1. Verificar que `app.js` se cargue correctamente
+2. Revisar consola por errores de JavaScript
+3. Verificar que el botón toggle tenga el ID correcto: `sidebar-toggle`
+
+### Burbuja de sugerencias no aparece
+
+**Causa:** El módulo `suggestions.js` no se cargó.
+
+**Solución:**
+1. Verificar que `suggestions.js` esté incluido en `index.html`
+2. Verificar que no haya errores en la consola
+3. Llamar manualmente: `suggestions.init()`
+
 ---
 
 ## Desarrollo
@@ -443,4 +558,42 @@ handleProviderChange(provider) {
 
 ---
 
-**Frontend desarrollado con:** Vanilla JS + Bootstrap 5 + Font Awesome
+## Arquitectura CSS
+
+El frontend utiliza una arquitectura CSS modular:
+
+### `base.css`
+- Variables CSS para tema claro/oscuro
+- Estilos base y reset
+- Componentes reutilizables
+- Animaciones y transiciones
+
+### `desktop.css`
+- Layout para pantallas ≥992px
+- Sidebar fijo
+- Grid de Bootstrap
+
+### `mobile.css`
+- Layout para pantallas <992px
+- Sidebar drawer
+- Touch optimizations
+- Media queries específicas
+
+### Variables CSS Principales
+```css
+:root {
+  --color-primary: #667eea;
+  --color-secondary: #764ba2;
+  --bg-sidebar: #ffffff;
+  --bg-chat: #f1f5f9;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  --radius-md: 10px;
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+```
+
+---
+
+**Frontend desarrollado con:** Vanilla JS + Bootstrap 5 + Font Awesome + CSS Variables

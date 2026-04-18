@@ -28,80 +28,78 @@
                     <i class="fas fa-times"></i>
                 </button>
                 <div class="sidebar-content">
-                    <h4 class="sidebar-title">
-                        <i class="fas fa-database"></i> Chat con MySQL
-                    </h4>
-                    
-                    <!-- Saved Connections Section -->
-                    <div class="section-card">
-                        <h6 class="section-title">
-                            <i class="fas fa-server"></i> Conexiones Guardadas
-                        </h6>
-                        <div id="saved-connections-list" class="mb-2">
-                            <small class="text-muted">Cargando conexiones...</small>
-                        </div>
-                        <button class="btn btn-outline-primary btn-sm w-100" data-bs-toggle="collapse" data-bs-target="#new-connection-form">
-                            <i class="fas fa-plus"></i> Agregar Conexión
-                        </button>
+                    <!-- Sidebar Header -->
+                    <div class="sidebar-header">
+                        <h4 class="sidebar-title">
+                            <i class="fas fa-database"></i> Chat con MySQL
+                        </h4>
                     </div>
                     
-                    <!-- New Connection Form (Collapsible) -->
-                    <div class="collapse" id="new-connection-form">
-                        <div class="section-card">
-                            <h6 class="section-title">
-                                <i class="fas fa-plug"></i> Nueva Conexión
-                            </h6>
-                            <div class="mb-2">
-                                <input type="text" class="form-control form-control-sm" id="conn-name" placeholder="Nombre (ej: BD Producción)">
-                            </div>
-                            <div class="mb-2">
-                                <input type="text" class="form-control form-control-sm" id="db-host" placeholder="Host (localhost)" value="localhost">
-                            </div>
-                            <div class="mb-2">
-                                <input type="text" class="form-control form-control-sm" id="db-port" placeholder="Puerto (3306)" value="3306">
-                            </div>
-                            <div class="mb-2">
-                                <input type="text" class="form-control form-control-sm" id="db-user" placeholder="Usuario">
-                            </div>
-                            <div class="mb-2">
-                                <input type="password" class="form-control form-control-sm" id="db-password" placeholder="Contraseña">
-                            </div>
-                            <div class="mb-2">
-                                <input type="text" class="form-control form-control-sm" id="db-name" placeholder="Nombre de la base de datos">
-                            </div>
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-outline-info btn-sm" id="btn-test-connection">
-                                    <i class="fas fa-vial"></i> Probar Conexión
-                                </button>
-                                <button class="btn btn-success btn-sm" id="btn-save-connection">
-                                    <i class="fas fa-save"></i> Guardar Conexión
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Chats Section -->
-                    <div class="section-card">
-                        <h6 class="section-title">
-                            <i class="fas fa-comments"></i> Chats
-                        </h6>
-                        <div id="chats-list" class="mb-2">
-                            <small class="text-muted">No hay chats aún</small>
-                        </div>
-                        <button class="btn btn-primary btn-sm w-100" id="btn-new-chat">
+                    <!-- Quick Actions Section -->
+                    <div class="section-card quick-actions">
+                        <button class="btn btn-primary w-100 btn-new-chat-main" id="btn-new-chat">
                             <i class="fas fa-plus"></i> Nuevo Chat
                         </button>
                     </div>
                     
-
-                    <!-- Current Chat Info -->
-                    <div class="section-card">
-                        <h6 class="section-title">
-                            <i class="fas fa-info-circle"></i> Chat Actual
-                        </h6>
-                        <div class="mb-2">
-                            <strong id="current-chat-title">Ningún chat seleccionado</strong>
-                            <small class="d-block text-muted" id="current-chat-db">Selecciona o crea un chat</small>
+                    <!-- Chats Section -->
+                    <div class="section-card chats-section">
+                        <div class="section-header" data-bs-toggle="collapse" data-bs-target="#chats-collapse" aria-expanded="true">
+                            <h6 class="section-title">
+                                <i class="fas fa-comments"></i> Chats
+                                <span class="badge bg-secondary ms-1" id="chats-count">0</span>
+                            </h6>
+                            <i class="fas fa-chevron-down section-toggle"></i>
+                        </div>
+                        <div class="collapse show" id="chats-collapse">
+                            <div id="chats-list" class="chats-list-container">
+                                <small class="text-muted">No hay chats aún</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Connections Section -->
+                    <div class="section-card connections-section">
+                        <div class="section-header" data-bs-toggle="collapse" data-bs-target="#connections-collapse" aria-expanded="true">
+                            <h6 class="section-title">
+                                <i class="fas fa-server"></i> Conexiones
+                                <span class="badge bg-secondary ms-1" id="connections-count">0</span>
+                            </h6>
+                            <i class="fas fa-chevron-down section-toggle"></i>
+                        </div>
+                        <div class="collapse show" id="connections-collapse">
+                            <div id="saved-connections-list" class="connections-list-container">
+                                <small class="text-muted">Cargando conexiones...</small>
+                            </div>
+                            <button class="btn btn-outline-primary btn-sm w-100 mt-2" onclick="connections.showNewConnectionModal()">
+                                <i class="fas fa-plus"></i> Agregar Conexión
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Current Chat Info (Collapsible) -->
+                    <div class="section-card current-chat-section">
+                        <div class="section-header" data-bs-toggle="collapse" data-bs-target="#current-chat-collapse" aria-expanded="false">
+                            <h6 class="section-title">
+                                <i class="fas fa-info-circle"></i> Chat Actual
+                            </h6>
+                            <i class="fas fa-chevron-down section-toggle"></i>
+                        </div>
+                        <div class="collapse" id="current-chat-collapse">
+                            <div class="current-chat-info">
+                                <div class="chat-info-item">
+                                    <span class="info-label">Nombre:</span>
+                                    <strong id="current-chat-title">Ningún chat seleccionado</strong>
+                                </div>
+                                <div class="chat-info-item">
+                                    <span class="info-label">Base de datos:</span>
+                                    <span id="current-chat-db">-</span>
+                                </div>
+                                <div class="chat-info-item">
+                                    <span class="info-label">Modelo:</span>
+                                    <span id="current-chat-model">-</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -280,6 +278,55 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-primary" onclick="chats.createChat()">
                         <i class="fas fa-plus"></i> Crear Chat
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- New Connection Modal -->
+    <div class="modal fade" id="newConnectionModal" tabindex="-1" aria-labelledby="newConnectionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newConnectionModalLabel"><i class="fas fa-plug"></i> Nueva Conexión</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nombre de la Conexión</label>
+                        <input type="text" class="form-control" id="conn-name" placeholder="ej: BD Producción">
+                    </div>
+                    <div class="row">
+                        <div class="col-8 mb-3">
+                            <label class="form-label fw-semibold">Host</label>
+                            <input type="text" class="form-control" id="db-host" placeholder="localhost" value="localhost">
+                        </div>
+                        <div class="col-4 mb-3">
+                            <label class="form-label fw-semibold">Puerto</label>
+                            <input type="text" class="form-control" id="db-port" placeholder="3306" value="3306">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Usuario</label>
+                        <input type="text" class="form-control" id="db-user" placeholder="Usuario de la base de datos">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Contraseña</label>
+                        <input type="password" class="form-control" id="db-password" placeholder="Contraseña">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nombre de la Base de Datos</label>
+                        <input type="text" class="form-control" id="db-name" placeholder="Nombre de la base de datos">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-info" id="btn-test-connection-modal">
+                        <i class="fas fa-vial"></i> Probar
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="connections.saveConnection()">
+                        <i class="fas fa-save"></i> Guardar
                     </button>
                 </div>
             </div>

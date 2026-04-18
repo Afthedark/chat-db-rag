@@ -214,10 +214,270 @@ html, body {
 .section-title {
   font-weight: var(--font-semibold);
   color: var(--text-secondary);
-  margin-bottom: var(--space-3);
+  margin-bottom: 0;
   font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ============================================
+   IMPROVED SIDEBAR STYLES
+   ============================================ */
+
+.sidebar-header {
+  padding-bottom: var(--space-3);
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: var(--space-2);
+}
+
+/* Quick Actions Section */
+.quick-actions {
+  padding: var(--space-3);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  border: none;
+}
+
+.quick-actions .btn-new-chat-main {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-weight: var(--font-semibold);
+  padding: var(--space-3) var(--space-4);
+  transition: all var(--transition-fast);
+}
+
+.quick-actions .btn-new-chat-main:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Section Headers with Toggle */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: var(--space-2) 0;
+  margin-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-color-light);
+  transition: border-color var(--transition-fast);
+}
+
+.section-header:hover {
+  border-color: var(--border-color);
+}
+
+.section-header .section-toggle {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.section-header[aria-expanded="true"] .section-toggle {
+  transform: rotate(180deg);
+}
+
+.section-header:hover .section-toggle {
+  color: var(--text-secondary);
+}
+
+/* Chat List Container */
+.chats-list-container,
+.connections-list-container {
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
+/* Custom Scrollbar for lists */
+.chats-list-container::-webkit-scrollbar,
+.connections-list-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.chats-list-container::-webkit-scrollbar-track,
+.connections-list-container::-webkit-scrollbar-track {
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+}
+
+.chats-list-container::-webkit-scrollbar-thumb,
+.connections-list-container::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.chats-list-container::-webkit-scrollbar-thumb:hover,
+.connections-list-container::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Chat Items */
+.chat-item {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-bottom: var(--space-2);
+  position: relative;
+}
+
+.chat-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-color);
+}
+
+.chat-item.active,
+.chat-item.border-primary {
+  background: var(--bg-card);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.chat-item.active::before,
+.chat-item.border-primary::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--color-primary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.chat-item .chat-title {
+  font-weight: var(--font-medium);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-item .chat-db {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-item .btn-delete {
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  padding: var(--space-1);
+  font-size: var(--text-xs);
+}
+
+.chat-item:hover .btn-delete {
+  opacity: 1;
+}
+
+/* Connection Items */
+.connection-item {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  margin-bottom: var(--space-2);
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.connection-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-color);
+}
+
+.connection-item.active,
+.connection-item.border-primary {
+  background: var(--bg-card);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.connection-item.active::before,
+.connection-item.border-primary::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--color-primary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.connection-item .connection-name {
+  font-weight: var(--font-medium);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.connection-item .connection-details {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.connection-item .btn-group {
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.connection-item:hover .btn-group {
+  opacity: 1;
+}
+
+.connection-item .btn-group .btn {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+}
+
+/* Current Chat Info Section */
+.current-chat-section .section-header {
+  margin-bottom: 0;
+}
+
+.current-chat-info {
+  padding-top: var(--space-3);
+}
+
+.chat-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-color-light);
+  font-size: var(--text-sm);
+}
+
+.chat-info-item:last-child {
+  border-bottom: none;
+}
+
+.chat-info-item .info-label {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.chat-info-item strong,
+.chat-info-item span:last-child {
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+}
+
+/* Section Badges */
+.section-title .badge {
+  font-size: 0.65rem;
+  padding: 0.15em 0.4em;
 }
 
 /* ============================================

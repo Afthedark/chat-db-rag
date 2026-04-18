@@ -675,6 +675,95 @@
   }
   
   /* ============================================
+     IMPROVED SIDEBAR - MOBILE
+     ============================================ */
+  
+  .sidebar-header {
+    padding-bottom: var(--space-3);
+    margin-bottom: var(--space-3);
+  }
+  
+  .sidebar-title {
+    font-size: var(--text-base);
+    padding-right: var(--space-8); /* Space for close button */
+  }
+  
+  /* Quick Actions */
+  .quick-actions {
+    padding: var(--space-3);
+  }
+  
+  .quick-actions .btn-new-chat-main {
+    padding: var(--space-3);
+    font-size: var(--text-sm);
+  }
+  
+  /* Section Cards */
+  .section-card {
+    padding: var(--space-3);
+  }
+  
+  .section-header {
+    padding: var(--space-1) 0;
+  }
+  
+  .section-title {
+    font-size: 0.7rem;
+  }
+  
+  .section-title .badge {
+    font-size: 0.6rem;
+  }
+  
+  /* Chat & Connection Lists */
+  .chats-list-container,
+  .connections-list-container {
+    max-height: 150px;
+  }
+  
+  .chat-item,
+  .connection-item {
+    padding: var(--space-2);
+    margin-bottom: var(--space-1);
+  }
+  
+  .chat-item .chat-title,
+  .connection-item .connection-name {
+    font-size: var(--text-sm);
+  }
+  
+  .chat-item .chat-db,
+  .connection-item .connection-details {
+    font-size: 0.7rem;
+  }
+  
+  /* Always show delete buttons on mobile (no hover) */
+  .chat-item .btn-delete,
+  .connection-item .btn-group {
+    opacity: 1;
+  }
+  
+  .chat-item .btn-delete,
+  .connection-item .btn-group .btn {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.7rem;
+  }
+  
+  /* Current Chat Info */
+  .current-chat-info {
+    padding-top: var(--space-2);
+  }
+  
+  .chat-info-item {
+    padding: var(--space-1) 0;
+    font-size: var(--text-xs);
+  }
+  
+  .chat-info-item .info-label {
+    font-size: 0.65rem;
+  }
+  
+  /* ============================================
      SCROLLBAR - MOBILE (Hidden)
      ============================================ */
   
