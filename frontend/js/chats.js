@@ -325,8 +325,8 @@ const chats = {
                     modelEl.textContent = modelName ? `${provider} - ${modelName}` : provider;
                 }
                 
-                // Update provider badge in header
-                this.updateProviderBadge(chatData.config);
+                // Update header with connection and model info
+                this.updateChatHeader(chatData);
                 
                 // Enable chat input after selecting chat
                 if (typeof chat !== 'undefined') {
@@ -368,8 +368,8 @@ const chats = {
                     if (titleEl) titleEl.textContent = 'Ningún chat seleccionado';
                     if (dbEl) dbEl.textContent = 'Crea o selecciona un chat para comenzar';
                     
-                    // Reset provider badge
-                    this.updateProviderBadge(null);
+                    // Reset chat header
+                    this.updateChatHeader(null);
                 }
                 await this.loadChats();
             } else {
@@ -389,44 +389,66 @@ const chats = {
     },
 
     /**
-     * Update the provider badge in the header based on chat config
-     * @param {Object} config - Chat configuration with provider info
+     * Update the chat header with connection and model info
+     * @param {Object} chatData - Chat data with connection and config info
      */
-    updateProviderBadge(config) {
-        const badge = document.getElementById('provider-badge');
-        if (!badge) return;
+    updateChatHeader(chatData) {
+        const connectionBadge = document.getElementById('header-connection-badge');
+        const modelBadge = document.getElementById('header-model-badge');
+        
+        if (!connectionBadge || !modelBadge) return;
 
-        if (!config || !config.provider) {
-            badge.textContent = 'Selecciona un chat';
-            badge.className = 'badge bg-secondary ms-2';
+        // Reset state - no chat selected
+        if (!chatData) {
+            connectionBadge.innerHTML = '<i class="fas fa-database"></i> Selecciona un chat';
+            connectionBadge.className = 'badge bg-secondary';
+            modelBadge.innerHTML = '<i class="fas fa-robot"></i> -';
+            modelBadge.className = 'badge bg-secondary';
             return;
         }
 
-        const provider = config.provider;
-        let providerLabel = provider.charAt(0).toUpperCase() + provider.slice(1);
-        let badgeClass = 'badge ms-2';
+        // Update connection badge
+        const connectionName = chatData.connection_name || chatData.database_name || 'Conexión';
+        connectionBadge.innerHTML = `<i class="fas fa-database"></i> ${connectionName}`;
+        connectionBadge.className = 'badge bg-primary';
 
+        // Update model badge - show provider directly
+        const config = chatData.config || {};
+        const provider = config.provider || 'LLM';
+        
+        // Capitalize first letter
+        const providerDisplay = provider.charAt(0).toUpperCase() + provider.slice(1).toLowerCase();
+        let modelClass = 'badge';
+        
         // Set badge color based on provider
-        switch (provider) {
+        switch (provider.toLowerCase()) {
             case 'ollama':
-                badgeClass += ' bg-info';
+                modelClass += ' bg-info';
                 break;
             case 'gemini':
-                badgeClass += ' bg-warning text-dark';
-                // Add model name if available
-                if (config.model_name) {
-                    providerLabel = config.model_name;
-                }
+                modelClass += ' bg-warning text-dark';
                 break;
             case 'openrouter':
-                badgeClass += ' bg-success';
+                modelClass += ' bg-success';
                 break;
             default:
-                badgeClass += ' bg-secondary';
+                modelClass += ' bg-secondary';
         }
 
-        badge.textContent = providerLabel;
-        badge.className = badgeClass;
+        modelBadge.innerHTML = `<i class="fas fa-robot"></i> ${providerDisplay}`;
+        modelBadge.className = modelClass;
+    },
+
+    /**
+     * Update the provider badge in the header based on chat config (legacy method)
+     * @param {Object} config - Chat configuration with provider info
+     * @deprecated Use updateChatHeader instead
+     */
+    updateProviderBadge(config) {
+        // This method is kept for backward compatibility
+        // The new updateChatHeader method provides more comprehensive info
+        const chatData = { config };
+        this.updateChatHeader(chatData);
     },
 
     /**

@@ -112,10 +112,19 @@
                     <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Abrir menú">
                         <i class="fas fa-bars"></i>
                     </button>
-                    <h5 class="mb-0">
-                        <i class="fas fa-comments"></i> Chat
-                        <span class="badge bg-secondary ms-2" id="provider-badge">Selecciona un chat</span>
-                    </h5>
+                    <div class="chat-header-info">
+                        <h5 class="mb-0 chat-header-title">
+                            <i class="fas fa-comments"></i> Chat
+                        </h5>
+                        <div class="chat-header-badges" id="chat-header-badges">
+                            <span class="badge bg-secondary" id="header-connection-badge">
+                                <i class="fas fa-database"></i> Selecciona un chat
+                            </span>
+                            <span class="badge bg-secondary" id="header-model-badge">
+                                <i class="fas fa-robot"></i> -
+                            </span>
+                        </div>
+                    </div>
                     <div class="chat-header-actions">
                         <!-- Theme toggle will be inserted here by theme.js -->
                     </div>

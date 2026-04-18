@@ -66,10 +66,40 @@
     justify-content: space-between;
   }
   
-  .chat-header h5 {
+  .chat-header-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    flex: 1;
+  }
+  
+  .chat-header-title {
     font-size: var(--text-xl);
     font-weight: var(--font-semibold);
     margin: 0;
+    white-space: nowrap;
+  }
+  
+  .chat-header-badges {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+  
+  .chat-header-badges .badge {
+    font-size: var(--text-xs);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-md);
+    font-weight: var(--font-medium);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    transition: all var(--transition-fast);
+  }
+  
+  .chat-header-badges .badge i {
+    font-size: 0.75rem;
   }
   
   .chat-header-actions {
