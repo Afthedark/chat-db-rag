@@ -268,6 +268,14 @@ const chats = {
      * Select and load a chat
      */
     async selectChat(id) {
+        // If chat is already selected, show feedback and exit
+        if (id === this.currentChatId) {
+            app.showToast('Este chat ya está seleccionado', 'info');
+            // Visual feedback on the chat item
+            this.flashChatItem(id);
+            return;
+        }
+
         app.showLoading('Loading chat...');
 
         try {
@@ -403,6 +411,26 @@ const chats = {
 
         badge.textContent = providerLabel;
         badge.className = badgeClass;
+    },
+
+    /**
+     * Flash effect on chat item when already selected
+     * @param {number} id - Chat ID
+     */
+    flashChatItem(id) {
+        // Find the chat item element
+        const chatItems = document.querySelectorAll('.chat-item');
+        chatItems.forEach(item => {
+            // Check if this is the clicked item by looking at the onclick attribute
+            if (item.getAttribute('onclick') && item.getAttribute('onclick').includes(`selectChat(${id})`)) {
+                // Add flash class
+                item.classList.add('chat-item-flash');
+                // Remove flash class after animation completes
+                setTimeout(() => {
+                    item.classList.remove('chat-item-flash');
+                }, 600);
+            }
+        });
     },
 
     /**

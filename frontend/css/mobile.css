@@ -660,6 +660,20 @@
     font-size: var(--text-xs);
   }
   
+  .welcome-instruction {
+    padding: var(--space-3) var(--space-4);
+    gap: var(--space-2);
+    max-width: 100%;
+  }
+  
+  .welcome-instruction i {
+    font-size: 1.25rem;
+  }
+  
+  .welcome-instruction span {
+    font-size: var(--text-sm);
+  }
+  
   /* ============================================
      SCROLLBAR - MOBILE (Hidden)
      ============================================ */
@@ -745,4 +759,27 @@
     padding: var(--space-3) var(--space-4);
   }
   
+  /* Chat item flash effect for mobile landscape */
+  .chat-item-flash {
+    animation-duration: 0.5s;
+  }
+  
+}
+
+/* ============================================
+   CHAT ITEM FLASH - MOBILE SPECIFIC
+   ============================================ */
+
+@media (max-width: 768px) {
+  @keyframes chat-item-flash {
+    0%, 100% {
+      background-color: var(--bg-secondary);
+      border-color: var(--border-color);
+    }
+    50% {
+      background-color: var(--primary-light);
+      border-color: var(--primary);
+      transform: scale(1.02);
+    }
+  }
 }
