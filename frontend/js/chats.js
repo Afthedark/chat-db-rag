@@ -239,7 +239,7 @@ const chats = {
             });
 
             if (response.data.success) {
-                app.showToast('Chat created successfully', 'success');
+                app.showToast('Chat creado exitosamente', 'success');
                 
                 // Hide modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('newChatModal'));
@@ -248,12 +248,17 @@ const chats = {
                 // Reload chats and select the new one
                 await this.loadChats();
                 await this.selectChat(response.data.id);
+                
+                // Enable chat input after creating chat
+                if (typeof chat !== 'undefined') {
+                    chat.enableInput();
+                }
             } else {
-                app.showToast(response.data.error || 'Failed to create chat', 'error');
+                app.showToast(response.data.error || 'Error al crear el chat', 'error');
             }
         } catch (error) {
             console.error('Create chat error:', error);
-            app.showToast('Failed to create chat', 'error');
+            app.showToast('Error al crear el chat', 'error');
         } finally {
             app.hideLoading();
         }
@@ -269,7 +274,7 @@ const chats = {
             // Get chat details first
             const chatData = this.chatsList.find(c => c.id === id);
             if (!chatData) {
-                app.showToast('Chat not found', 'error');
+                app.showToast('Chat no encontrado', 'error');
                 return;
             }
             
@@ -296,11 +301,16 @@ const chats = {
                 document.getElementById('current-chat-title').textContent = chatData.title;
                 document.getElementById('current-chat-db').textContent = chatData.database_name || 'No database';
                 
-                app.showToast('Chat loaded', 'success');
+                // Enable chat input after selecting chat
+                if (typeof chat !== 'undefined') {
+                    chat.enableInput();
+                }
+                
+                app.showToast('Chat cargado', 'success');
             }
         } catch (error) {
             console.error('Load chat error:', error);
-            app.showToast('Failed to load chat', 'error');
+            app.showToast('Error al cargar el chat', 'error');
         } finally {
             app.hideLoading();
         }
@@ -310,14 +320,14 @@ const chats = {
      * Delete a chat
      */
     async delete(id) {
-        if (!confirm('Are you sure you want to delete this chat?')) {
+        if (!confirm('¿Estás seguro de que quieres eliminar este chat?')) {
             return;
         }
 
         try {
             const response = await api.chats.delete(id);
             if (response.data.success) {
-                app.showToast('Chat deleted', 'success');
+                app.showToast('Chat eliminado', 'success');
                 if (this.currentChatId === id) {
                     this.currentChatId = null;
                     // BUG 3 FIX: chat.clearMessages() doesn't exist; clear the container directly
@@ -328,16 +338,16 @@ const chats = {
                     // Reset current chat info in sidebar
                     const titleEl = document.getElementById('current-chat-title');
                     const dbEl = document.getElementById('current-chat-db');
-                    if (titleEl) titleEl.textContent = 'No chat selected';
-                    if (dbEl) dbEl.textContent = 'Select or create a chat';
+                    if (titleEl) titleEl.textContent = 'Ningún chat seleccionado';
+                    if (dbEl) dbEl.textContent = 'Crea o selecciona un chat para comenzar';
                 }
                 await this.loadChats();
             } else {
-                app.showToast(response.data.error || 'Failed to delete', 'error');
+                app.showToast(response.data.error || 'Error al eliminar', 'error');
             }
         } catch (error) {
             console.error('Delete chat error:', error);
-            app.showToast('Failed to delete chat', 'error');
+            app.showToast('Error al eliminar el chat', 'error');
         }
     },
 

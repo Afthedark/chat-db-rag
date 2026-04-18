@@ -183,7 +183,7 @@ const connections = {
             const response = await api.connections.create(data);
 
             if (response.data.success) {
-                app.showToast('Connection saved successfully', 'success');
+                app.showToast('Conexión guardada exitosamente', 'success');
                 // Clear form fields
                 document.getElementById('conn-name').value = '';
                 document.getElementById('db-host').value = 'localhost';
@@ -194,11 +194,11 @@ const connections = {
                 // Reload connections list
                 await this.loadConnections();
             } else {
-                app.showToast(response.data.error || 'Failed to save connection', 'error');
+                app.showToast(response.data.error || 'Error al guardar la conexión', 'error');
             }
         } catch (error) {
             console.error('Save connection error:', error);
-            app.showToast('Failed to save connection', 'error');
+            app.showToast('Error al guardar la conexión', 'error');
         } finally {
             app.hideLoading();
         }
@@ -234,14 +234,9 @@ const connections = {
                     console.log('Database module updated, isConnected:', database.isConnected);
                 }
                 
-                // Enable chat functionality
-                if (typeof chat !== 'undefined') {
-                    console.log('Calling chat.enableInput()');
-                    chat.enableInput();
-                    console.log('Chat input should be enabled now');
-                } else {
-                    console.error('Chat module not found!');
-                }
+                // NOTE: Chat input is NOT enabled here anymore
+                // Chat will be enabled only when a chat is selected/created
+                console.log('Connection established, chat remains disabled until a chat is selected');
                 
                 // Refresh chats for this connection
                 if (typeof chats !== 'undefined') {
@@ -249,11 +244,11 @@ const connections = {
                 }
             } else {
                 console.error('Connection failed:', response.data.error);
-                app.showToast(response.data.error || 'Connection failed', 'error');
+                app.showToast(response.data.error || 'Conexión fallida', 'error');
             }
         } catch (error) {
             console.error('Connect error:', error);
-            app.showToast('Failed to connect', 'error');
+            app.showToast('Error al conectar', 'error');
         } finally {
             app.hideLoading();
         }
@@ -284,25 +279,25 @@ const connections = {
      * Delete a saved connection
      */
     async delete(id) {
-        if (!confirm('Are you sure you want to delete this connection?')) {
+        if (!confirm('¿Estás seguro de que quieres eliminar esta conexión?')) {
             return;
         }
 
         try {
             const response = await api.connections.delete(id);
             if (response.data.success) {
-                app.showToast('Connection deleted', 'success');
+                app.showToast('Conexión eliminada', 'success');
                 // Remove from list if current
                 if (this.currentConnectionId === id) {
                     this.currentConnectionId = null;
                 }
                 await this.loadConnections();
             } else {
-                app.showToast(response.data.error || 'Failed to delete', 'error');
+                app.showToast(response.data.error || 'Error al eliminar', 'error');
             }
         } catch (error) {
             console.error('Delete error:', error);
-            app.showToast('Failed to delete connection', 'error');
+            app.showToast('Error al eliminar la conexión', 'error');
         }
     },
 

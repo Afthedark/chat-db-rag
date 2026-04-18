@@ -7,6 +7,7 @@ const chat = {
     messagesContainer: null,
     messageInput: null,
     sendButton: null,
+    welcomeScreen: null,
     isProcessing: false,
 
     /**
@@ -16,6 +17,7 @@ const chat = {
         this.messagesContainer = document.getElementById('messages-container');
         this.messageInput = document.getElementById('message-input');
         this.sendButton = document.getElementById('btn-send');
+        this.welcomeScreen = document.getElementById('welcome-screen');
 
         // Check if elements exist
         if (!this.messagesContainer || !this.messageInput || !this.sendButton) {
@@ -32,13 +34,40 @@ const chat = {
             }
         });
 
-        // Initially disable input until connected
+        // Initially disable input and show welcome screen
         this.disableInput();
+        this.showWelcomeScreen();
 
         // Note: messages are loaded when a chat is selected via chats.selectChat()
         // Do NOT load legacy history here
         
         console.log('Chat module initialized');
+    },
+
+    /**
+     * Show welcome screen (when no chat selected)
+     */
+    showWelcomeScreen() {
+        if (this.welcomeScreen) {
+            this.welcomeScreen.classList.remove('d-none');
+        }
+        if (this.messagesContainer) {
+            this.messagesContainer.classList.add('d-none');
+        }
+        console.log('Welcome screen shown');
+    },
+
+    /**
+     * Hide welcome screen (when chat selected)
+     */
+    hideWelcomeScreen() {
+        if (this.welcomeScreen) {
+            this.welcomeScreen.classList.add('d-none');
+        }
+        if (this.messagesContainer) {
+            this.messagesContainer.classList.remove('d-none');
+        }
+        console.log('Welcome screen hidden');
     },
 
     /**
@@ -188,8 +217,8 @@ const chat = {
         const header = document.createElement('div');
         header.className = 'message-header';
         header.innerHTML = role === 'user' 
-            ? '<i class="fas fa-user"></i> You' 
-            : '<i class="fas fa-robot"></i> Assistant';
+            ? '<i class="fas fa-user"></i> Tú' 
+            : '<i class="fas fa-robot"></i> Asistente';
 
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
@@ -217,7 +246,7 @@ const chat = {
 
         const header = document.createElement('div');
         header.className = 'message-header';
-        header.innerHTML = '<i class="fas fa-robot"></i> Assistant';
+        header.innerHTML = '<i class="fas fa-robot"></i> Asistente';
 
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
@@ -229,7 +258,7 @@ const chat = {
 
         const sqlHeader = document.createElement('div');
         sqlHeader.className = 'sql-query-header';
-        sqlHeader.innerHTML = '<i class="fas fa-code"></i> View SQL Query';
+        sqlHeader.innerHTML = '<i class="fas fa-code"></i> Ver consulta SQL';
         sqlHeader.style.cursor = 'pointer';
 
         const sqlCode = document.createElement('pre');
@@ -239,8 +268,8 @@ const chat = {
         sqlHeader.addEventListener('click', () => {
             sqlCode.classList.toggle('d-none');
             sqlHeader.innerHTML = sqlCode.classList.contains('d-none')
-                ? '<i class="fas fa-code"></i> View SQL Query'
-                : '<i class="fas fa-code"></i> Hide SQL Query';
+                ? '<i class="fas fa-code"></i> Ver consulta SQL'
+                : '<i class="fas fa-code"></i> Ocultar consulta SQL';
         });
 
         sqlContainer.appendChild(sqlHeader);
@@ -250,7 +279,7 @@ const chat = {
         if (results && results !== message) {
             const resultsDiv = document.createElement('div');
             resultsDiv.className = 'sql-results d-none';
-            resultsDiv.innerHTML = `<strong>Results:</strong><br>${this.formatMessage(results)}`;
+            resultsDiv.innerHTML = `<strong>Resultados:</strong><br>${this.formatMessage(results)}`;
             sqlContainer.appendChild(resultsDiv);
 
             sqlHeader.addEventListener('click', () => {
@@ -386,6 +415,9 @@ const chat = {
             return;
         }
         
+        // Hide welcome screen and show messages
+        this.hideWelcomeScreen();
+        
         // Force enable by removing disabled attribute and property
         this.messageInput.removeAttribute('disabled');
         this.sendButton.removeAttribute('disabled');
@@ -393,12 +425,12 @@ const chat = {
         this.sendButton.disabled = false;
         
         // Update placeholder
-        this.messageInput.placeholder = 'Type your question about the database...';
+        this.messageInput.placeholder = 'Escribe tu pregunta sobre la base de datos...';
         
         // Update status message
         const statusMsg = document.getElementById('chat-status-message');
         if (statusMsg) {
-            statusMsg.innerHTML = '<i class="fas fa-check-circle text-success"></i> Connected - Ready to chat';
+            statusMsg.innerHTML = '<i class="fas fa-check-circle text-success"></i> Listo para chatear';
         }
         
         // Focus input
@@ -419,15 +451,18 @@ const chat = {
             return;
         }
         
+        // Show welcome screen and hide messages
+        this.showWelcomeScreen();
+        
         // Force disable
         this.messageInput.disabled = true;
         this.sendButton.disabled = true;
-        this.messageInput.placeholder = 'Connect to a database first to start chatting';
+        this.messageInput.placeholder = 'Selecciona un chat para comenzar';
         
         // Update status message
         const statusMsg = document.getElementById('chat-status-message');
         if (statusMsg) {
-            statusMsg.innerHTML = '<i class="fas fa-info-circle"></i> Connect to a database first to start chatting';
+            statusMsg.innerHTML = '<i class="fas fa-info-circle"></i> Crea o selecciona un chat para comenzar';
         }
         
         console.log('Chat input disabled');

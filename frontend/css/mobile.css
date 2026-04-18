@@ -1,0 +1,748 @@
+/**
+ * Chat with MySQL - Mobile Styles
+ * Layout for screens <992px (mobile and tablet)
+ */
+
+@media (max-width: 991px) {
+  
+  /* ============================================
+     LAYOUT - MOBILE
+     ============================================ */
+  
+  html, body {
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+  
+  .container-fluid {
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
+  }
+  
+  /* ============================================
+     SIDEBAR - MOBILE (Drawer)
+     ============================================ */
+  
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    top: 0;
+    width: 85%;
+    max-width: 340px;
+    height: 100%;
+    height: 100dvh;
+    z-index: 1060;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: none;
+    padding: var(--space-4);
+    background-color: var(--bg-sidebar);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .sidebar.show {
+    left: 0;
+    box-shadow: var(--shadow-xl);
+  }
+  
+  /* Sidebar overlay */
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+  
+  .sidebar-overlay.show {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  /* Sidebar toggle button - Force show on mobile */
+  .sidebar-toggle,
+  button.sidebar-toggle,
+  .chat-header .sidebar-toggle,
+  #sidebar-toggle {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-md) !important;
+    color: var(--text-secondary) !important;
+    cursor: pointer !important;
+    transition: all var(--transition-fast) !important;
+    position: relative !important;
+    z-index: 100 !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+  }
+  
+  .sidebar-toggle:hover,
+  .sidebar-toggle:active {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+  
+  .sidebar-toggle i,
+  #sidebar-toggle i {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    pointer-events: none;
+  }
+  
+  /* Sidebar close button (mobile only) */
+  .sidebar-close {
+    display: flex !important;
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-hover);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    color: var(--text-secondary);
+    cursor: pointer;
+    z-index: 10;
+    transition: all var(--transition-fast);
+  }
+  
+  .sidebar-close:hover,
+  .sidebar-close:active {
+    background: var(--bg-chat);
+    color: var(--text-primary);
+    border-color: var(--border-focus);
+  }
+  
+  /* ============================================
+     MAIN CONTENT - MOBILE
+     ============================================ */
+  
+  .main-content {
+    width: 100%;
+    position: relative;
+  }
+  
+  /* ============================================
+     CHAT HEADER - MOBILE
+     ============================================ */
+  
+  .chat-header {
+    padding: var(--space-3) var(--space-4);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--space-3);
+    min-height: 60px;
+  }
+  
+  .chat-header h5 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    margin: 0;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+  }
+  
+  .chat-header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-left: auto;
+  }
+  
+  /* ============================================
+     MESSAGES - MOBILE
+     ============================================ */
+  
+  .messages-container {
+    padding: var(--space-4);
+    gap: var(--space-3);
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .message {
+    max-width: 92%;
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+  }
+  
+  .message-content {
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+  }
+  
+  .message-content p {
+    margin-bottom: var(--space-2);
+  }
+  
+  /* SQL Query on mobile */
+  .sql-query-code {
+    font-size: var(--text-xs);
+    padding: var(--space-2);
+    max-height: 150px;
+    overflow-y: auto;
+  }
+  
+  .sql-results {
+    font-size: var(--text-xs);
+    max-height: 150px;
+  }
+  
+  /* ============================================
+     INPUT AREA - MOBILE
+     ============================================ */
+  
+  .input-area {
+    padding: var(--space-3) var(--space-4);
+    padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+  }
+  
+  .input-area .input-group {
+    max-width: 100%;
+  }
+  
+  #message-input {
+    font-size: 16px; /* Prevent zoom on iOS */
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  }
+  
+  #btn-send {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-sm);
+  }
+  
+  #btn-send .btn-text {
+    display: none; /* Hide text, show only icon on small screens */
+  }
+  
+  #btn-send i {
+    font-size: var(--text-lg);
+  }
+  
+  /* ============================================
+     SUGGESTIONS BUBBLE - MOBILE
+     ============================================ */
+  
+  .suggestions-bubble {
+    position: fixed;
+    bottom: 90px;
+    right: 16px;
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-lg);
+    z-index: 1050;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  }
+  
+  .suggestions-bubble:hover,
+  .suggestions-bubble:active {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-xl);
+  }
+  
+  .suggestions-bubble-icon {
+    color: var(--text-white);
+    font-size: 1.25rem;
+  }
+  
+  .suggestions-bubble-badge {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    background: linear-gradient(135deg, #ff4757 0%, #ff6b7a 100%);
+    color: var(--text-white);
+    font-size: 10px;
+    font-weight: var(--font-bold);
+    padding: 2px 6px;
+    border-radius: var(--radius-full);
+    min-width: 20px;
+    text-align: center;
+  }
+  
+  /* Pulse Animation - Mobile */
+  @keyframes pulse-bubble {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+  }
+  
+  .suggestions-bubble.pulse {
+    animation: pulse-bubble 1s ease-in-out;
+  }
+  
+  /* ============================================
+     SUGGESTIONS PANEL - MOBILE
+     ============================================ */
+  
+  .suggestions-panel {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transform: none;
+    width: 100%;
+    max-height: 80vh;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
+    z-index: 1060;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: none;
+    border-top: 1px solid var(--border-color);
+  }
+  
+  .suggestions-panel.d-none {
+    display: none !important;
+  }
+  
+  /* Slide up animation */
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  .suggestions-panel:not(.d-none) {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  .suggestions-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-4);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    color: var(--text-white);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    flex-shrink: 0;
+  }
+  
+  .suggestions-panel-header h6 {
+    font-weight: var(--font-semibold);
+    font-size: var(--text-base);
+  }
+  
+  .suggestions-panel-header .btn-link {
+    color: var(--text-white) !important;
+    padding: var(--space-1);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+  }
+  
+  .suggestions-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-3);
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Handle bar for mobile panel */
+  .suggestions-panel::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: var(--radius-full);
+    z-index: 1;
+  }
+  
+  /* Category Sections - Mobile */
+  .suggestion-category {
+    margin-bottom: var(--space-2);
+  }
+  
+  .suggestion-category-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3);
+    background: var(--bg-hover);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+  }
+  
+  .suggestion-category-header:active {
+    background: var(--bg-chat);
+  }
+  
+  .suggestion-category-header i {
+    transition: transform var(--transition-fast);
+    color: var(--text-muted);
+  }
+  
+  .suggestion-category-header.collapsed i {
+    transform: rotate(-90deg);
+  }
+  
+  .suggestion-category-title {
+    font-weight: var(--font-semibold);
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+  }
+  
+  .suggestion-category-count {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    background: var(--bg-card);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+  }
+  
+  .suggestion-category-items {
+    padding: var(--space-2);
+  }
+  
+  .suggestion-category-items.d-none {
+    display: none;
+  }
+  
+  /* Suggestion Items - Mobile */
+  .suggestion-item {
+    padding: var(--space-3);
+    margin-bottom: var(--space-2);
+    background: var(--bg-hover);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+    border-left: 3px solid transparent;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    line-height: var(--leading-tight);
+  }
+  
+  .suggestion-item:active {
+    background: var(--bg-chat);
+    border-left-color: var(--color-primary);
+    transform: translateX(2px);
+  }
+  
+  .suggestion-item i {
+    color: var(--color-primary);
+    font-size: var(--text-xs);
+    margin-top: 3px;
+    flex-shrink: 0;
+  }
+  
+  /* ============================================
+     SIDEBAR COMPONENTS - MOBILE
+     ============================================ */
+  
+  .sidebar-title {
+    font-size: var(--text-base);
+    padding-right: var(--space-8); /* Space for close button */
+  }
+  
+  .section-card {
+    padding: var(--space-3);
+  }
+  
+  .section-title {
+    font-size: var(--text-xs);
+  }
+  
+  /* Form controls in sidebar */
+  .sidebar .form-label {
+    font-size: var(--text-xs);
+    margin-bottom: var(--space-1);
+  }
+  
+  .sidebar .form-control,
+  .sidebar .form-select {
+    font-size: var(--text-sm);
+    padding: var(--space-2) var(--space-3);
+  }
+  
+  .sidebar .btn {
+    font-size: var(--text-sm);
+    padding: var(--space-2) var(--space-3);
+    width: 100%;
+  }
+  
+  /* ============================================
+     THEME TOGGLE - MOBILE
+     ============================================ */
+  
+  .theme-toggle {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+  }
+  
+  .theme-toggle:active {
+    background: var(--bg-hover);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+  
+  .theme-toggle i {
+    font-size: var(--text-base);
+  }
+  
+  /* ============================================
+     MODAL - MOBILE
+     ============================================ */
+  
+  .modal-dialog {
+    margin: var(--space-4);
+    max-width: calc(100% - var(--space-8));
+  }
+  
+  .modal-content {
+    border-radius: var(--radius-lg);
+  }
+  
+  .modal-header {
+    padding: var(--space-3) var(--space-4);
+  }
+  
+  .modal-body {
+    padding: var(--space-4);
+  }
+  
+  .modal-footer {
+    padding: var(--space-3) var(--space-4);
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  
+  .modal-footer .btn {
+    width: 100%;
+  }
+  
+  /* ============================================
+     TOAST - MOBILE
+     ============================================ */
+  
+  .toast-container {
+    position: fixed;
+    top: auto;
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    left: var(--space-4);
+    right: var(--space-4);
+    padding: 0;
+  }
+  
+  .toast {
+    width: 100%;
+    min-width: auto;
+    max-width: 100%;
+  }
+  
+  /* ============================================
+     PROVIDER BADGE - MOBILE
+     ============================================ */
+  
+  #provider-badge {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+  
+  /* ============================================
+     CONNECTION STATUS - MOBILE
+     ============================================ */
+  
+  #connection-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+  
+  #connection-status .badge {
+    font-size: var(--text-xs);
+    padding: var(--space-1) var(--space-2);
+  }
+  
+  #connection-status .badge-text {
+    display: none; /* Hide text, show only status dot */
+  }
+  
+  /* ============================================
+     WELCOME SCREEN - MOBILE
+     ============================================ */
+  
+  .welcome-screen {
+    padding: var(--space-4);
+  }
+  
+  .welcome-content {
+    padding: var(--space-6);
+    max-width: 100%;
+  }
+  
+  .welcome-icon {
+    width: 60px;
+    height: 60px;
+    margin-bottom: var(--space-4);
+  }
+  
+  .welcome-icon i {
+    font-size: 1.75rem;
+  }
+  
+  .welcome-title {
+    font-size: var(--text-xl);
+    margin-bottom: var(--space-3);
+  }
+  
+  .welcome-text {
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-4);
+  }
+  
+  .welcome-btn {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-base);
+    width: 100%;
+  }
+  
+  .welcome-hint {
+    font-size: var(--text-xs);
+  }
+  
+  /* ============================================
+     SCROLLBAR - MOBILE (Hidden)
+     ============================================ */
+  
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  
+  .messages-container::-webkit-scrollbar,
+  .suggestions-panel-body::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+}
+
+/* ============================================
+   SMALL MOBILE SCREENS (<576px)
+   ============================================ */
+
+@media (max-width: 575px) {
+  
+  .chat-header h5 {
+    font-size: var(--text-base);
+  }
+  
+  .messages-container {
+    padding: var(--space-3);
+  }
+  
+  .message {
+    max-width: 95%;
+    padding: var(--space-3);
+  }
+  
+  .input-area {
+    padding: var(--space-2) var(--space-3);
+  }
+  
+  #message-input {
+    font-size: 16px;
+    padding: var(--space-2) var(--space-3);
+  }
+  
+  .suggestions-bubble {
+    bottom: 80px;
+    right: 12px;
+    width: 48px;
+    height: 48px;
+  }
+  
+  .suggestions-bubble-icon {
+    font-size: 1.1rem;
+  }
+  
+  .suggestions-panel {
+    max-height: 85vh;
+  }
+  
+  .suggestion-item {
+    font-size: var(--text-xs);
+    padding: var(--space-2);
+  }
+  
+}
+
+/* ============================================
+   LANDSCAPE ORIENTATION
+   ============================================ */
+
+@media (max-width: 991px) and (orientation: landscape) {
+  
+  .sidebar {
+    width: 70%;
+    max-width: 400px;
+  }
+  
+  .suggestions-panel {
+    max-height: 90vh;
+  }
+  
+  .messages-container {
+    padding: var(--space-3) var(--space-4);
+  }
+  
+}

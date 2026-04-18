@@ -130,10 +130,8 @@ const database = {
                 this.isConnected = true;
                 this.connectionInfo = response.data.info;
                 this.updateConnectionUI(true);
-                // MEJORA 1 FIX: defer enableInput so chat module finishes initializing first
-                setTimeout(() => {
-                    if (typeof chat !== 'undefined') chat.enableInput();
-                }, 0);
+                // NOTE: Chat input is NOT enabled here anymore
+                // Chat will be enabled only when a chat is selected/created
             }
         } catch (error) {
             console.log('No active database connection');
@@ -152,7 +150,7 @@ const database = {
 
         // Validate inputs
         if (!user || !password || !dbName) {
-            app.showToast('Please fill in all database fields', 'warning');
+            app.showToast('Por favor completa todos los campos de la base de datos', 'warning');
             return;
         }
 
@@ -177,12 +175,12 @@ const database = {
                 };
                 this.updateConnectionUI(true);
                 chat.enableInput();
-                app.showToast('Connected to database successfully', 'success');
+                app.showToast('Conectado a la base de datos exitosamente', 'success');
                 
                 // Load chat history after connection
                 chat.loadHistory();
             } else {
-                app.showToast(response.data.error || 'Connection failed', 'error');
+                app.showToast(response.data.error || 'Conexión fallida', 'error');
             }
         } catch (error) {
             console.error('Connection error:', error);
@@ -203,10 +201,10 @@ const database = {
             this.connectionInfo = null;
             this.updateConnectionUI(false);
             chat.disableInput();
-            app.showToast('Disconnected from database', 'info');
+            app.showToast('Desconectado de la base de datos', 'info');
         } catch (error) {
             console.error('Disconnect error:', error);
-            app.showToast('Error disconnecting from database', 'error');
+            app.showToast('Error al desconectar de la base de datos', 'error');
         }
     },
 
@@ -252,7 +250,7 @@ const database = {
      */
     async getSchema() {
         if (!this.isConnected) {
-            app.showToast('Not connected to database', 'warning');
+            app.showToast('No conectado a la base de datos', 'warning');
             return null;
         }
 
@@ -263,7 +261,7 @@ const database = {
             }
         } catch (error) {
             console.error('Failed to get schema:', error);
-            app.showToast('Failed to get database schema', 'error');
+            app.showToast('Error al obtener el esquema de la base de datos', 'error');
         }
         return null;
     },
@@ -274,7 +272,7 @@ const database = {
      */
     async executeQuery(sql) {
         if (!this.isConnected) {
-            app.showToast('Not connected to database', 'warning');
+            app.showToast('No conectado a la base de datos', 'warning');
             return null;
         }
 
@@ -285,7 +283,7 @@ const database = {
             }
         } catch (error) {
             console.error('Query execution error:', error);
-            app.showToast('Failed to execute query', 'error');
+            app.showToast('Error al ejecutar la consulta', 'error');
         }
         return null;
     }
