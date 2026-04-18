@@ -779,7 +779,7 @@
     font-size: 0.7rem;
   }
   
-  /* Always show delete buttons on mobile (no hover) */
+  /* Always show buttons on mobile (no hover) */
   .chat-item .btn-delete,
   .connection-item .btn-group {
     opacity: 1;
@@ -789,6 +789,21 @@
   .connection-item .btn-group .btn {
     padding: 0.2rem 0.4rem;
     font-size: 0.7rem;
+  }
+  
+  /* Connection actions - ensure all buttons fit */
+  .connection-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 2px;
+  }
+  
+  .connection-actions .btn {
+    min-width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   
   /* Current Chat Info */

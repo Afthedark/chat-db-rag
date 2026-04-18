@@ -342,6 +342,56 @@
         </div>
     </div>
     
+    <!-- Edit Connection Modal -->
+    <div class="modal fade" id="editConnectionModal" tabindex="-1" aria-labelledby="editConnectionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editConnectionModalLabel"><i class="fas fa-edit"></i> Editar Conexión</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="edit-conn-id">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nombre de la Conexión</label>
+                        <input type="text" class="form-control" id="edit-conn-name" placeholder="ej: BD Producción">
+                    </div>
+                    <div class="row">
+                        <div class="col-8 mb-3">
+                            <label class="form-label fw-semibold">Host</label>
+                            <input type="text" class="form-control" id="edit-db-host" placeholder="localhost">
+                        </div>
+                        <div class="col-4 mb-3">
+                            <label class="form-label fw-semibold">Puerto</label>
+                            <input type="text" class="form-control" id="edit-db-port" placeholder="3306">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Usuario</label>
+                        <input type="text" class="form-control" id="edit-db-user" placeholder="Usuario de la base de datos">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Contraseña <small class="text-muted">(dejar en blanco para mantener actual)</small></label>
+                        <input type="password" class="form-control" id="edit-db-password" placeholder="Nueva contraseña (opcional)">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nombre de la Base de Datos</label>
+                        <input type="text" class="form-control" id="edit-db-name" placeholder="Nombre de la base de datos">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-info" onclick="connections.testEditConnection()">
+                        <i class="fas fa-vial"></i> Probar
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="connections.saveEditConnection()">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Toast Container -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
         <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">

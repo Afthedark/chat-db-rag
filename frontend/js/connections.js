@@ -98,9 +98,12 @@ const connections = {
                         <div class="connection-name">${conn.name}</div>
                         <div class="connection-details">${conn.database_name} @ ${conn.host}:${conn.port}</div>
                     </div>
-                    <div class="btn-group btn-group-sm">
+                    <div class="btn-group btn-group-sm connection-actions">
                         <button class="btn btn-outline-primary" onclick="connections.connect(${conn.id})" title="Conectar">
                             <i class="fas fa-plug"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="connections.edit(${conn.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
                         </button>
                         <button class="btn btn-outline-secondary" onclick="connections.test(${conn.id})" title="Probar">
                             <i class="fas fa-vial"></i>
@@ -346,5 +349,131 @@ const connections = {
      */
     getById(id) {
         return this.connectionsList.find(c => c.id === id);
+    },
+
+    /**
+     * Open edit modal with connection data
+     */
+    edit(id) {
+        const conn = this.getById(id);
+        if (!conn) {
+            app.showToast('Conexión no encontrada', 'error');
+            return;
+        }
+
+        // Populate form fields
+        document.getElementById('edit-conn-id').value = conn.id;
+        document.getElementById('edit-conn-name').value = conn.name;
+        document.getElementById('edit-db-host').value = conn.host;
+        document.getElementById('edit-db-port').value = conn.port;
+        document.getElementById('edit-db-user').value = conn.username;
+        document.getElementById('edit-db-password').value = ''; // Don't show existing password
+        document.getElementById('edit-db-name').value = conn.database_name;
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('editConnectionModal'));
+        modal.show();
+    },
+
+    /**
+     * Get edit form data
+     */
+    getEditFormData() {
+        return {
+            id: parseInt(document.getElementById('edit-conn-id').value),
+            name: document.getElementById('edit-conn-name').value.trim(),
+            host: document.getElementById('edit-db-host').value.trim() || 'localhost',
+            port: parseInt(document.getElementById('edit-db-port').value) || 3306,
+            username: document.getElementById('edit-db-user').value.trim(),
+            password: document.getElementById('edit-db-password').value,
+            database_name: document.getElementById('edit-db-name').value.trim()
+        };
+    },
+
+    /**
+     * Test connection from edit form
+     */
+    async testEditConnection() {
+        const data = this.getEditFormData();
+        
+        if (!this.validateForm(data)) {
+            return;
+        }
+
+        app.showLoading('Probando conexión...');
+
+        try {
+            // Test with temporary credentials
+            const response = await api.database.test({
+                host: data.host,
+                port: data.port,
+                username: data.username,
+                password: data.password,
+                database: data.database_name
+            });
+
+            if (response.data.success) {
+                app.showToast('Conexión exitosa', 'success');
+            } else {
+                app.showToast(response.data.error || 'Conexión fallida', 'error');
+            }
+        } catch (error) {
+            console.error('Test connection error:', error);
+            app.showToast('Error al probar la conexión', 'error');
+        } finally {
+            app.hideLoading();
+        }
+    },
+
+    /**
+     * Save edited connection
+     */
+    async saveEditConnection() {
+        const data = this.getEditFormData();
+        
+        if (!this.validateForm(data)) {
+            return;
+        }
+
+        app.showLoading('Guardando cambios...');
+
+        try {
+            // Build update payload (only include password if provided)
+            const payload = {
+                name: data.name,
+                host: data.host,
+                port: data.port,
+                username: data.username,
+                database_name: data.database_name
+            };
+            
+            // Only send password if user entered a new one
+            if (data.password) {
+                payload.password = data.password;
+            }
+
+            const response = await api.connections.update(data.id, payload);
+
+            if (response.data.success) {
+                app.showToast('Conexión actualizada', 'success');
+                
+                // Close modal
+                const modalEl = document.getElementById('editConnectionModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                }
+                
+                // Reload connections list
+                await this.loadConnections();
+            } else {
+                app.showToast(response.data.error || 'Error al actualizar la conexión', 'error');
+            }
+        } catch (error) {
+            console.error('Update connection error:', error);
+            app.showToast('Error al actualizar la conexión', 'error');
+        } finally {
+            app.hideLoading();
+        }
     }
 };

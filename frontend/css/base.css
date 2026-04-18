@@ -441,6 +441,21 @@ html, body {
   font-size: var(--text-xs);
 }
 
+.connection-item .btn-group .btn:hover {
+  transform: translateY(-1px);
+}
+
+.connection-item .btn-group .btn-outline-secondary {
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+.connection-item .btn-group .btn-outline-secondary:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
 /* Current Chat Info Section */
 .current-chat-section .section-header {
   margin-bottom: 0;
