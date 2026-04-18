@@ -12,7 +12,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from services.llm import llm_manager
 from services.database import db_manager
 from config import Config
-from business_context import BUSINESS_RULES, BUSINESS_RELATIONSHIPS, TABLE_GLOSSARY
+from business_context import BUSINESS_RULES, BUSINESS_RELATIONSHIPS, TABLE_GLOSSARY, TIME_ANALYSIS_QUERIES, PRODUCT_SEARCH_RULES
 
 # Configuration
 MAX_CHAT_HISTORY = Config.MAX_CHAT_HISTORY
@@ -149,6 +149,10 @@ Yesterday     : {yesterday}
 {BUSINESS_RELATIONSHIPS}
 
 {TABLE_GLOSSARY}
+
+{TIME_ANALYSIS_QUERIES}
+
+{PRODUCT_SEARCH_RULES}
 
 Conversation History: {limited_history}
 

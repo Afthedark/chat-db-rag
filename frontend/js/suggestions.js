@@ -39,6 +39,25 @@ const suggestions = {
             "Top productos para llevar (PLL) esta semana",
             "Productos estrella del día"
         ],
+        "Análisis por Horarios": [
+            "¿Cuánta cantidad de Broaster se vendió por hora el día de hoy?",
+            "¿Cuánta cantidad de Broaster se vendió por hora el día de ayer?",
+            "¿Cuánto se vende de Broaster por hora?",
+            "Tiempo promedio de atención por hora",
+            "¿Qué productos se vendieron hoy entre las 10am y 2pm?",
+            "Top productos vendidos ayer en la mañana (8am-12pm)",
+            "¿Cuánto vendimos en el horario de cena (6pm-9pm)?",
+            "Productos más vendidos al mediodía (12pm-2pm)",
+            "¿Cuál es nuestra hora pico?",
+            "Muéstrame el resumen de ventas hora por hora",
+            "¿Cuánto vendemos en la mañana vs la tarde?",
+            "Top 5 productos más vendidos en horario de almuerzo",
+            "Comparación: días de semana vs fines de semana",
+            "¿Qué día de la semana genera más dinero?",
+            "Reporte de ventas nocturnas después de las 8 PM",
+            "Ticket promedio por cada hora del día",
+            "Ventas entre las 3pm y 5pm de ayer"
+        ],
         "Por Categoría / Tipo": [
             "¿Cuántas bebidas vendimos hoy?",
             "Top 5 bebidas más vendidas esta semana",
@@ -67,6 +86,19 @@ const suggestions = {
             "¿Qué día de la semana vendemos más?",
             "Ventas por día de esta semana",
             "Mejor horario de ventas del mes"
+        ],
+        
+        "Búsquedas de Productos": [
+            "¿Cuántas sanguchitas vendimos hoy?",
+            "¿Cuántas sanguchitas vendimos en total (local y para llevar)?",
+            "Top 5 productos más vendidos de todos los tiempos",
+            "¿Cuánto vendimos de productos bañados?",
+            "Ventas de Pollo al Horno",
+            "¿Cuántas alitas vendimos por tamaño?",
+            "Comparar ventas: Box Friends vs Box Wings",
+            "¿Cuántas Pechuguitas 5 vendimos?",
+            "¿Cuántos combos con Pepsi vendimos este mes?",
+            "¿Cuántos productos con papas extra vendimos?"
         ],
         "Clientes y Atención": [
             "¿Cuántos clientes atendimos hoy?",
