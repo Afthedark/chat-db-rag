@@ -114,6 +114,8 @@ Punto de entrada y utilidades globales.
 - `app.showToast(message, type)` - Mostrar notificaciones
 - `app.showLoading(text)` - Mostrar modal de carga
 - `app.hideLoading()` - Ocultar modal de carga
+- `app.openSidebar(e)` - Abrir menú lateral móvil
+- `app.closeSidebar()` - Cerrar menú lateral móvil
 - `app.init()` - Inicializar todos los módulos
 
 **Inicialización:**
@@ -330,6 +332,7 @@ Maneja el tema claro/oscuro de la aplicación.
 - **Contadores**: Badges con cantidad de chats y conexiones
 - **Diseño optimizado**: Items compactos con hover effects
 - **Responsive**: Sidebar drawer en móvil con ancho optimizado
+- **Auto-cierre inteligente**: El sidebar se cierra automáticamente tras acciones clave en móvil (seleccionar chat, crear chat, conectar BD) para mejorar el flujo de trabajo.
 
 ### Pantalla de Bienvenida
 - Se muestra cuando no hay chat seleccionado
@@ -578,6 +581,16 @@ El frontend utiliza una arquitectura CSS modular:
 - Sidebar drawer
 - Touch optimizations
 - Media queries específicas
+
+### Sistema de Animaciones Premium
+
+La aplicación utiliza un sistema de transiciones suave para mantener una estética de alta calidad:
+
+- **Button Loaders (`.btn-loading`)**: Para acciones rápidas (como probar conexión), se usa un spinner interno en el botón en lugar de bloquear toda la interfaz.
+- **Cross-Fade Transitions**: El cambio entre la pantalla de bienvenida y el área de chat utiliza fundidos de opacidad (`.fade-in`, `.fade-out`).
+- **Exit Animations**: Módulos como el panel de sugerencias tienen animaciones de salida (`slideDown`, `slideOutRight`) antes de removerse visualmente.
+- **Feedback Visual (`.chat-item-flash`)**: Resaltado suave de elementos recién seleccionados o modificados.
+- **Modales con Blur**: Uso de `backdrop-filter: blur()` en los fondos de los modales para centrar la atención.
 
 ### Variables CSS Principales
 ```css

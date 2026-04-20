@@ -800,6 +800,7 @@
   .chat-item .btn-delete,
   .connection-item .btn-group {
     opacity: 1;
+    width: auto !important;
   }
   
   .chat-item .btn-delete,
