@@ -29,6 +29,10 @@ const chats = {
             newChatBtn.removeAttribute('data-bs-target');
             newChatBtn.addEventListener('click', (e) => {
                 e.preventDefault();
+                // Close sidebar on mobile
+                if (typeof app !== 'undefined' && app.closeSidebar) {
+                    app.closeSidebar();
+                }
                 this.showNewChatModal();
             });
         }
@@ -235,7 +239,7 @@ const chats = {
             return;
         }
 
-        app.showLoading('Creating chat...');
+        app.showLoading('Creando chat...');
 
         try {
             const response = await api.chats.create({
@@ -261,6 +265,11 @@ const chats = {
                 if (typeof chat !== 'undefined') {
                     chat.enableInput();
                 }
+
+                // Close sidebar on mobile after creation
+                if (typeof app !== 'undefined' && app.closeSidebar) {
+                    app.closeSidebar();
+                }
             } else {
                 app.showToast(response.data.error || 'Error al crear el chat', 'error');
             }
@@ -284,7 +293,7 @@ const chats = {
             return;
         }
 
-        app.showLoading('Loading chat...');
+        app.showLoading('Cargando chat...');
 
         try {
             // Get chat details first
@@ -334,6 +343,11 @@ const chats = {
                 }
                 
                 app.showToast('Chat cargado', 'success');
+
+                // Close sidebar on mobile after selection
+                if (typeof app !== 'undefined' && app.closeSidebar) {
+                    app.closeSidebar();
+                }
             }
         } catch (error) {
             console.error('Load chat error:', error);
@@ -480,7 +494,7 @@ const chats = {
             return;
         }
 
-        app.showLoading('Generating response...');
+        app.showLoading('Mama Chicken IA está analizando tu consulta...');
 
         try {
             const response = await api.chats.send(this.currentChatId, {

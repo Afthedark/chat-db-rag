@@ -43,53 +43,65 @@ const app = {
         
         console.log('Mobile sidebar initialized');
         
-        // Open sidebar - Support both click and touch
-        const openSidebar = (e) => {
-            if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            console.log('Opening sidebar');
-            sidebar.classList.add('show');
-            if (sidebarOverlay) sidebarOverlay.classList.add('show');
-            document.body.style.overflow = 'hidden';
-        };
-        
-        sidebarToggle.addEventListener('click', openSidebar);
-        sidebarToggle.addEventListener('touchstart', openSidebar, { passive: false });
-        
-        // Close sidebar functions
-        const closeSidebar = () => {
-            sidebar.classList.remove('show');
-            if (sidebarOverlay) sidebarOverlay.classList.remove('show');
-            document.body.style.overflow = '';
-        };
+        sidebarToggle.addEventListener('click', (e) => this.openSidebar(e));
+        sidebarToggle.addEventListener('touchstart', (e) => this.openSidebar(e), { passive: false });
         
         // Close button
         if (sidebarClose) {
-            sidebarClose.addEventListener('click', closeSidebar);
-            sidebarClose.addEventListener('touchstart', closeSidebar, { passive: false });
+            sidebarClose.addEventListener('click', () => this.closeSidebar());
+            sidebarClose.addEventListener('touchstart', () => this.closeSidebar(), { passive: false });
         }
         
         // Overlay click/touch
         if (sidebarOverlay) {
-            sidebarOverlay.addEventListener('click', closeSidebar);
-            sidebarOverlay.addEventListener('touchstart', closeSidebar, { passive: false });
+            sidebarOverlay.addEventListener('click', () => this.closeSidebar());
+            sidebarOverlay.addEventListener('touchstart', () => this.closeSidebar(), { passive: false });
         }
         
         // Close on escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && sidebar.classList.contains('show')) {
-                closeSidebar();
+                this.closeSidebar();
             }
         });
+    },
+
+    /**
+     * Open mobile sidebar
+     */
+    openSidebar(e) {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        if (sidebar) sidebar.classList.add('show');
+        if (sidebarOverlay) sidebarOverlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        console.log('Sidebar opened');
+    },
+
+    /**
+     * Close mobile sidebar
+     */
+    closeSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        
+        if (sidebar) sidebar.classList.remove('show');
+        if (sidebarOverlay) sidebarOverlay.classList.remove('show');
+        document.body.style.overflow = '';
+        console.log('Sidebar closed');
     },
 
     /**
      * Show loading modal
      * @param {string} text - Loading text to display
      */
-    showLoading(text = 'Processing...') {
+    showLoading(text = 'Analizando datos...') {
         document.getElementById('loading-text').textContent = text;
         this.loadingModal.show();
     },

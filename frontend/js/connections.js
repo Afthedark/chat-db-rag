@@ -121,6 +121,11 @@ const connections = {
      * Show modal to create new connection
      */
     showNewConnectionModal() {
+        // Close sidebar on mobile
+        if (typeof app !== 'undefined' && app.closeSidebar) {
+            app.closeSidebar();
+        }
+
         // Clear form fields
         document.getElementById('conn-name').value = '';
         document.getElementById('db-host').value = 'localhost';
@@ -172,15 +177,18 @@ const connections = {
      */
     async testNewConnection() {
         const data = this.getFormData();
+        const testBtn = document.getElementById('btn-test-connection-modal');
+        const feedbackArea = document.getElementById('new-connection-feedback');
         
         if (!this.validateForm(data)) {
             return;
         }
 
-        app.showLoading('Testing connection...');
+        // Inline loading state
+        if (testBtn) testBtn.classList.add('btn-loading');
+        if (feedbackArea) feedbackArea.classList.remove('show');
 
         try {
-            // Use the database endpoint to test connection
             const response = await api.database.test({
                 host: data.host,
                 port: data.port,
@@ -190,15 +198,28 @@ const connections = {
             });
 
             if (response.data.success) {
-                app.showToast('Connection test successful! You can now save it.', 'success');
+                if (feedbackArea) {
+                    feedbackArea.className = 'connection-feedback show connection-feedback-success';
+                    feedbackArea.innerHTML = '<i class="fas fa-check-circle"></i> ¡Conexión exitosa!';
+                }
+                app.showToast('¡Prueba de conexión exitosa!', 'success');
             } else {
+                if (feedbackArea) {
+                    feedbackArea.className = 'connection-feedback show connection-feedback-error';
+                    feedbackArea.innerHTML = `<i class="fas fa-times-circle"></i> Error: ${response.data.error || 'Fallo de conexión'}`;
+                }
                 app.showToast(response.data.error || 'Connection test failed', 'error');
             }
         } catch (error) {
             console.error('Test connection error:', error);
-            app.showToast('Connection test failed: ' + (error.response?.data?.error || error.message), 'error');
+            const errorMsg = error.response?.data?.error || error.message;
+            if (feedbackArea) {
+                feedbackArea.className = 'connection-feedback show connection-feedback-error';
+                feedbackArea.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Error: ${errorMsg}`;
+            }
+            app.showToast('Error de conexión', 'error');
         } finally {
-            app.hideLoading();
+            if (testBtn) testBtn.classList.remove('btn-loading');
         }
     },
 
@@ -207,29 +228,48 @@ const connections = {
      */
     async saveConnection() {
         const data = this.getFormData();
+        const feedbackArea = document.getElementById('new-connection-feedback');
 
         // Validate
         if (!this.validateForm(data)) {
             return;
         }
 
-        app.showLoading('Saving connection...');
+        app.showLoading('Guardando conexión...');
 
         try {
             const response = await api.connections.create(data);
 
             if (response.data.success) {
                 app.showToast('Conexión guardada exitosamente', 'success');
+                
+                // Hide modal
+                const modalEl = document.getElementById('newConnectionModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+                
                 // Clear form fields
-                document.getElementById('conn-name').value = '';
-                document.getElementById('db-host').value = 'localhost';
-                document.getElementById('db-port').value = '3306';
-                document.getElementById('db-user').value = '';
-                document.getElementById('db-password').value = '';
-                document.getElementById('db-name').value = '';
-                // Reload connections list
+                this.clearForm();
+
+                // Reload connections list and highlight the new one
                 await this.loadConnections();
+                
+                // Close sidebar on mobile
+                if (typeof app !== 'undefined' && app.closeSidebar) {
+                    app.closeSidebar();
+                }
+
+                // Flash animation for the first item (usually the newest if sorted)
+                setTimeout(() => {
+                    const firstItem = document.querySelector('#saved-connections-list .connection-item');
+                    if (firstItem) firstItem.classList.add('chat-item-flash');
+                }, 500);
+
             } else {
+                if (feedbackArea) {
+                    feedbackArea.className = 'connection-feedback show connection-feedback-error';
+                    feedbackArea.innerHTML = `<i class="fas fa-times-circle"></i> ${response.data.error || 'Error al guardar'}`;
+                }
                 app.showToast(response.data.error || 'Error al guardar la conexión', 'error');
             }
         } catch (error) {
@@ -241,11 +281,28 @@ const connections = {
     },
 
     /**
+     * Clear new connection form
+     */
+    clearForm() {
+        document.getElementById('conn-name').value = '';
+        document.getElementById('db-host').value = 'localhost';
+        document.getElementById('db-port').value = '3306';
+        document.getElementById('db-user').value = '';
+        document.getElementById('db-password').value = '';
+        document.getElementById('db-name').value = '';
+        const feedbackArea = document.getElementById('new-connection-feedback');
+        if (feedbackArea) {
+            feedbackArea.classList.remove('show');
+            feedbackArea.innerHTML = '';
+        }
+    },
+
+    /**
      * Connect to a saved connection
      */
     async connect(id) {
         console.log('Connecting to database ID:', id);
-        app.showLoading('Connecting to database...');
+        app.showLoading('Conectando a la base de datos...');
 
         try {
             const response = await api.connections.connect(id);
@@ -256,7 +313,7 @@ const connections = {
                 console.log('Connection successful, currentConnectionId set to:', id);
                 
                 this.renderConnectionsList(); // Update UI to show active connection
-                app.showToast(`Connected to ${response.data.connection.name}`, 'success');
+                app.showToast(`Conectado a ${response.data.connection.name}`, 'success');
                 
                 // Update database module connection state
                 if (typeof database !== 'undefined') {
@@ -277,6 +334,11 @@ const connections = {
                 // Refresh chats for this connection
                 if (typeof chats !== 'undefined') {
                     chats.loadChats();
+                }
+
+                // Close sidebar on mobile
+                if (typeof app !== 'undefined' && app.closeSidebar) {
+                    app.closeSidebar();
                 }
             } else {
                 console.error('Connection failed:', response.data.error);
@@ -299,7 +361,7 @@ const connections = {
         try {
             const response = await api.connections.test(id);
             if (response.data.success) {
-                app.showToast('Connection test successful', 'success');
+                app.showToast('Prueba de conexión exitosa', 'success');
             } else {
                 app.showToast(response.data.error || 'Connection test failed', 'error');
             }
@@ -395,33 +457,50 @@ const connections = {
      */
     async testEditConnection() {
         const data = this.getEditFormData();
+        const testBtn = document.querySelector('#editConnectionModal button[onclick="connections.testEditConnection()"]');
+        const feedbackArea = document.getElementById('edit-connection-feedback');
         
         if (!this.validateForm(data)) {
             return;
         }
 
-        app.showLoading('Probando conexión...');
+        // Inline loading state
+        if (testBtn) testBtn.classList.add('btn-loading');
+        if (feedbackArea) feedbackArea.classList.remove('show');
 
         try {
             // Test with temporary credentials
             const response = await api.database.test({
                 host: data.host,
                 port: data.port,
-                username: data.username,
+                user: data.username,
                 password: data.password,
                 database: data.database_name
             });
 
             if (response.data.success) {
+                if (feedbackArea) {
+                    feedbackArea.className = 'connection-feedback show connection-feedback-success';
+                    feedbackArea.innerHTML = '<i class="fas fa-check-circle"></i> ¡Conexión exitosa!';
+                }
                 app.showToast('Conexión exitosa', 'success');
             } else {
+                if (feedbackArea) {
+                    feedbackArea.className = 'connection-feedback show connection-feedback-error';
+                    feedbackArea.innerHTML = `<i class="fas fa-times-circle"></i> Error: ${response.data.error || 'Conexión fallida'}`;
+                }
                 app.showToast(response.data.error || 'Conexión fallida', 'error');
             }
         } catch (error) {
             console.error('Test connection error:', error);
+            const errorMsg = error.response?.data?.error || error.message;
+            if (feedbackArea) {
+                feedbackArea.className = 'connection-feedback show connection-feedback-error';
+                feedbackArea.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Error: ${errorMsg}`;
+            }
             app.showToast('Error al probar la conexión', 'error');
         } finally {
-            app.hideLoading();
+            if (testBtn) testBtn.classList.remove('btn-loading');
         }
     },
 
@@ -430,6 +509,7 @@ const connections = {
      */
     async saveEditConnection() {
         const data = this.getEditFormData();
+        const feedbackArea = document.getElementById('edit-connection-feedback');
         
         if (!this.validateForm(data)) {
             return;
@@ -466,7 +546,19 @@ const connections = {
                 
                 // Reload connections list
                 await this.loadConnections();
+                
+                // Flash animation for the updated item
+                setTimeout(() => {
+                    const selector = `div[onclick*="connections.edit(${data.id})"]`;
+                    const item = document.querySelector(selector)?.closest('.connection-item');
+                    if (item) item.classList.add('chat-item-flash');
+                }, 500);
+
             } else {
+                if (feedbackArea) {
+                    feedbackArea.className = 'connection-feedback show connection-feedback-error';
+                    feedbackArea.innerHTML = `<i class="fas fa-times-circle"></i> ${response.data.error || 'Error al actualizar'}`;
+                }
                 app.showToast(response.data.error || 'Error al actualizar la conexión', 'error');
             }
         } catch (error) {

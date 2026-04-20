@@ -384,8 +384,25 @@
     }
   }
   
-  .suggestions-panel:not(.d-none) {
-    animation: slideUp 0.3s ease-out;
+  .suggestions-panel.active {
+    display: flex !important;
+    animation: slideUp 0.3s ease-out forwards;
+  }
+  
+  .suggestions-panel.closing {
+    display: flex !important;
+    animation: slideDown 0.3s ease-in forwards;
+  }
+  
+  @keyframes slideDown {
+    from {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateY(100%);
+      opacity: 0;
+    }
   }
   
   .suggestions-panel-header {

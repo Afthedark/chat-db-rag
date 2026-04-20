@@ -51,7 +51,7 @@ def create_chat():
         greeting = Message(
             chat_id=chat.id,
             role='assistant',
-            content="Hello! I'm a MySQL assistant. Ask me anything about your database."
+            content="¡Hola! Soy Mama Chicken IA 🐔. Tu asistente inteligente de análisis de datos. ¿En qué puedo ayudarte hoy?"
         )
         db.session.add(greeting)
         db.session.commit()

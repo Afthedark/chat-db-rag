@@ -50,11 +50,16 @@ const chat = {
     showWelcomeScreen() {
         if (this.welcomeScreen) {
             this.welcomeScreen.classList.remove('d-none');
+            void this.welcomeScreen.offsetWidth;
+            this.welcomeScreen.classList.remove('fade-out');
+            this.welcomeScreen.classList.add('fade-in');
         }
         if (this.messagesContainer) {
-            this.messagesContainer.classList.add('d-none');
+            this.messagesContainer.classList.add('fade-out');
+            setTimeout(() => {
+                this.messagesContainer.classList.add('d-none');
+            }, 300);
         }
-        console.log('Welcome screen shown');
     },
 
     /**
@@ -62,12 +67,18 @@ const chat = {
      */
     hideWelcomeScreen() {
         if (this.welcomeScreen) {
-            this.welcomeScreen.classList.add('d-none');
+            this.welcomeScreen.classList.remove('fade-in');
+            this.welcomeScreen.classList.add('fade-out');
+            setTimeout(() => {
+                this.welcomeScreen.classList.add('d-none');
+            }, 300);
         }
         if (this.messagesContainer) {
             this.messagesContainer.classList.remove('d-none');
+            void this.messagesContainer.offsetWidth;
+            this.messagesContainer.classList.remove('fade-out');
+            this.messagesContainer.classList.add('fade-in');
         }
-        console.log('Welcome screen hidden');
     },
 
     /**
@@ -86,7 +97,7 @@ const chat = {
         } catch (error) {
             console.error('Failed to load chat history:', error);
             // Add default greeting if history fails to load
-            this.addMessage('assistant', "Hello! I'm a MySQL assistant. Ask me anything about your database.", false);
+            this.addMessage('assistant', "¡Hola! Soy Mama Chicken IA 🐔. Tu asistente inteligente de análisis de datos. ¿En qué puedo ayudarte hoy?", false);
         }
     },
 
@@ -98,7 +109,7 @@ const chat = {
         this.messagesContainer.innerHTML = '';
         
         if (!messages || messages.length === 0) {
-            this.addMessage('assistant', "Hello! I'm a MySQL assistant. Ask me anything about your database.", false);
+            this.addMessage('assistant', "¡Hola! Soy Mama Chicken IA 🐔. Tu asistente inteligente de análisis de datos. ¿En qué puedo ayudarte hoy?", false);
             return;
         }
         
@@ -137,7 +148,7 @@ const chat = {
 
         // Show loading
         this.setProcessing(true);
-        app.showLoading('Generating response...');
+        app.showLoading('Mama Chicken IA está analizando tu consulta...');
 
         try {
             // Use the persistent chat route when a chat is selected
@@ -193,7 +204,7 @@ const chat = {
         header.className = 'message-header';
         header.innerHTML = role === 'user' 
             ? '<i class="fas fa-user"></i> Tú' 
-            : '<i class="fas fa-robot"></i> Asistente';
+            : '<i class="fas fa-robot"></i> Mama Chicken IA';
 
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
@@ -221,7 +232,7 @@ const chat = {
 
         const header = document.createElement('div');
         header.className = 'message-header';
-        header.innerHTML = '<i class="fas fa-robot"></i> Asistente';
+        header.innerHTML = '<i class="fas fa-robot"></i> Mama Chicken IA';
 
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
@@ -331,7 +342,7 @@ const chat = {
         try {
             await api.chat.clearHistory();
             this.messagesContainer.innerHTML = '';
-            this.addMessage('assistant', "Hello! I'm a MySQL assistant. Ask me anything about your database.", false);
+            this.addMessage('assistant', "¡Hola! Soy Mama Chicken IA 🐔. Tu asistente inteligente de análisis de datos. ¿En qué puedo ayudarte hoy?", false);
             app.showToast('Chat history cleared', 'success');
         } catch (error) {
             console.error('Failed to clear history:', error);

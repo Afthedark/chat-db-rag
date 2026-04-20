@@ -107,6 +107,7 @@ const suggestions = {
             "¿Cuántos pedidos para llevar vs para mesa?",
             "Ticket promedio por cliente hoy"
         ],
+        /*
         "Empleados y Cajas": [
             "¿Cuánto vendió cada empleado hoy?",
             "Ranking de ventas por cajero esta semana",
@@ -115,6 +116,7 @@ const suggestions = {
             "Empleado con más ventas del día",
             "Pedidos atendidos por cada empleado"
         ],
+        */
         "Productos Específicos": [
             "Buscar productos que contengan 'pollo'",
             "Ventas de productos que contengan 'combo'",
@@ -257,7 +259,7 @@ const suggestions = {
         
         // Close panel when clicking outside
         document.addEventListener('click', (e) => {
-            if (this.panel.classList.contains('d-none')) return;
+            if (this.panel.classList.contains('d-none') || this.panel.classList.contains('closing')) return;
             
             const isClickInside = this.panel.contains(e.target) || this.bubble.contains(e.target);
             if (!isClickInside) {
@@ -273,10 +275,10 @@ const suggestions = {
      * Toggle panel visibility
      */
     togglePanel() {
-        if (this.panel.classList.contains('d-none')) {
-            this.showPanel();
-        } else {
+        if (this.panel.classList.contains('active')) {
             this.hidePanel();
+        } else {
+            this.showPanel();
         }
     },
 
@@ -285,6 +287,9 @@ const suggestions = {
      */
     showPanel() {
         this.panel.classList.remove('d-none');
+        // Force reflow
+        void this.panel.offsetWidth;
+        this.panel.classList.add('active');
         this.stopPulseAnimation();
         
         // Mark as seen in localStorage
@@ -305,7 +310,16 @@ const suggestions = {
      * Hide the suggestions panel
      */
     hidePanel() {
-        this.panel.classList.add('d-none');
+        this.panel.classList.remove('active');
+        this.panel.classList.add('closing');
+        
+        // Wait for animation to finish (0.3s defined in CSS)
+        setTimeout(() => {
+            if (this.panel.classList.contains('closing')) {
+                this.panel.classList.add('d-none');
+                this.panel.classList.remove('closing');
+            }
+        }, 300);
     },
 
     /**

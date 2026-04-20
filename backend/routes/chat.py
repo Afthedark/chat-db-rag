@@ -36,7 +36,7 @@ def get_history():
     if not history:
         greeting = {
             'role': 'assistant',
-            'content': "Hello! I'm a MySQL assistant. Ask me anything about your database."
+            'content': "¡Hola! Soy Mama Chicken IA 🐔. Tu asistente inteligente de análisis de datos. ¿En qué puedo ayudarte hoy?"
         }
         history = [greeting]
         session['chat_history'] = history
@@ -148,7 +148,7 @@ def clear_history():
     # Add initial greeting back
     greeting = {
         'role': 'assistant',
-        'content': "Hello! I'm a MySQL assistant. Ask me anything about your database."
+        'content': "¡Hola! Soy Mama Chicken IA 🐔. Tu asistente inteligente de análisis de datos. ¿En qué puedo ayudarte hoy?"
     }
     session['chat_history'] = [greeting]
     
