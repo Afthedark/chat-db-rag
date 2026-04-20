@@ -163,6 +163,7 @@ Conversation History: {limited_history}
    SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = '{db_name}';
 4. Write ONLY the raw SQL query. No explanations, no markdown, no backticks.
 5. If unsure about a column name, use SELECT * FROM <table> LIMIT 1 to explore first.
+6. DO NOT generate INSERT, UPDATE, DELETE, DROP or any query that modifies data. You are a READ-ONLY analyst.
 
 Examples:
 Question: How many customers do we have?
@@ -254,10 +255,10 @@ def validate_sql(sql: str) -> Tuple[bool, Optional[str]]:
     # Check for basic SQL keywords
     sql_upper = sql.upper().strip()
     
-    # Must start with SELECT, INSERT, UPDATE, DELETE (for safety)
-    allowed_starts = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'SHOW', 'DESCRIBE', 'EXPLAIN']
+    # Must start with SELECT, SHOW, DESCRIBE, EXPLAIN for Read-Only safety
+    allowed_starts = ['SELECT', 'SHOW', 'DESCRIBE', 'EXPLAIN']
     if not any(sql_upper.startswith(keyword) for keyword in allowed_starts):
-        return False, f"SQL must start with one of: {', '.join(allowed_starts)}"
+        return False, "Lo siento, como asistente de análisis de datos no tengo permitido modificar, insertar o borrar registros (solo puedo generar consultas de lectura)."
     
     # Basic syntax checks
     open_parens = sql.count('(')
@@ -313,11 +314,13 @@ def process_user_query(question: str, chat_history: List[Any],
     # Validate SQL
     is_valid, error_msg = validate_sql(sql_result)
     if not is_valid:
+        # Check if the error is our friendly Spanish restriction message
+        is_restriction = "no tengo permitido" in error_msg
         return {
-            'type': 'error',
-            'content': f"Invalid SQL generated: {error_msg}",
+            'type': 'casual' if is_restriction else 'error',
+            'content': error_msg,
             'sql': sql_result,
-            'error': error_msg
+            'error': None if is_restriction else error_msg
         }
 
     # Execute SQL — with one automatic self-correction retry on failure
