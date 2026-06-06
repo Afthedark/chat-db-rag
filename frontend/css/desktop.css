@@ -562,3 +562,38 @@
   }
   
 }
+
+/* ============================================
+   KITCHEN PANEL STYLES
+   ============================================ */
+
+#panel-produccion-cocina {
+    transition: all 0.3s ease-in-out;
+}
+
+.btn-outline-orange {
+    color: #fd7e14;
+    border-color: #fd7e14;
+}
+
+.btn-outline-orange:hover {
+    color: #fff;
+    background-color: #fd7e14;
+    border-color: #fd7e14;
+}
+
+.kitchen-buttons-container {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.kitchen-category-title {
+    font-size: 0.72rem;
+    font-weight: bold;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-top: 10px;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+}

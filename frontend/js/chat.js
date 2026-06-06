@@ -97,7 +97,7 @@ const chat = {
         } catch (error) {
             console.error('Failed to load chat history:', error);
             // Add default greeting if history fails to load
-            this.addMessage('assistant', "¡Hola! Soy Mama Chicken IA 🐔. Tu asistente inteligente de análisis de datos. ¿En qué puedo ayudarte hoy?", false);
+            this.addMessage('assistant', "¡Hola! Soy Mama Chicken IA 🐔. Tu asistente inteligente de ventas y producción de cocina. Puedo ayudarte a proyectar puestas de pollo por hora (presas, alas, sanduchitas, al horno) y consolidar tus bebidas en litros. ¿En qué puedo ayudarte hoy?", false);
         }
     },
 
@@ -109,7 +109,7 @@ const chat = {
         this.messagesContainer.innerHTML = '';
         
         if (!messages || messages.length === 0) {
-            this.addMessage('assistant', "¡Hola! Soy Mama Chicken IA 🐔. Tu asistente inteligente de análisis de datos. ¿En qué puedo ayudarte hoy?", false);
+            this.addMessage('assistant', "¡Hola! Soy Mama Chicken IA 🐔. Tu asistente inteligente de ventas y producción de cocina. Puedo ayudarte a proyectar puestas de pollo por hora (presas, alas, sanduchitas, al horno) y consolidar tus bebidas en litros. ¿En qué puedo ayudarte hoy?", false);
             return;
         }
         
@@ -289,50 +289,21 @@ const chat = {
     formatMessage(content) {
         if (!content) return '';
 
-        // BUG 6 FIX: extract code blocks BEFORE escaping HTML, then re-insert them
-        const codeBlocks = [];
-        let formatted = content;
+        if (typeof marked !== 'undefined') {
+            // Configure marked options
+            marked.setOptions({
+                breaks: true,
+                gfm: true
+            });
+            return marked.parse(content);
+        }
 
-        // Step 1: Extract fenced code blocks (```lang\n...```) and replace with placeholders
-        formatted = formatted.replace(/```(\w*)\n?([\s\S]*?)```/g, (match, lang, code) => {
-            const index = codeBlocks.length;
-            codeBlocks.push({ lang, code });
-            return `%%CODEBLOCK_${index}%%`;
-        });
-
-        // Step 2: Extract inline code (`code`) and replace with placeholders
-        const inlineCodes = [];
-        formatted = formatted.replace(/`([^`]+)`/g, (match, code) => {
-            const index = inlineCodes.length;
-            inlineCodes.push(code);
-            return `%%INLINE_${index}%%`;
-        });
-
-        // Step 3: Escape HTML in the remaining plain text
-        formatted = formatted
+        // Fallback if marked is not loaded
+        return content
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
-
-        // Step 4: Convert newlines to <br>
-        formatted = formatted.replace(/\n/g, '<br>');
-
-        // Step 5: Re-insert inline codes as <code> elements
-        formatted = formatted.replace(/%%INLINE_(\d+)%%/g, (match, i) => {
-            const escaped = inlineCodes[i]
-                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            return `<code>${escaped}</code>`;
-        });
-
-        // Step 6: Re-insert fenced code blocks as <pre> elements
-        formatted = formatted.replace(/%%CODEBLOCK_(\d+)%%/g, (match, i) => {
-            const { code } = codeBlocks[i];
-            const escaped = code
-                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            return `<pre class="sql-query-code">${escaped}</pre>`;
-        });
-
-        return formatted;
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br>');
     },
 
     /**
@@ -342,7 +313,7 @@ const chat = {
         try {
             await api.chat.clearHistory();
             this.messagesContainer.innerHTML = '';
-            this.addMessage('assistant', "¡Hola! Soy Mama Chicken IA 🐔. Tu asistente inteligente de análisis de datos. ¿En qué puedo ayudarte hoy?", false);
+            this.addMessage('assistant', "¡Hola! Soy Mama Chicken IA 🐔. Tu asistente inteligente de ventas y producción de cocina. Puedo ayudarte a proyectar puestas de pollo por hora (presas, alas, sanduchitas, al horno) y consolidar tus bebidas en litros. ¿En qué puedo ayudarte hoy?", false);
             app.showToast('Chat history cleared', 'success');
         } catch (error) {
             console.error('Failed to clear history:', error);
@@ -419,6 +390,17 @@ const chat = {
             statusMsg.innerHTML = '<i class="fas fa-check-circle text-success"></i> Listo para chatear';
         }
         
+        // Show kitchen panel sidebar section
+        const kitchenSec = document.getElementById('kitchen-section');
+        if (kitchenSec) {
+            kitchenSec.classList.remove('d-none');
+            // Dynamically refresh buttons from localstorage if kitchenPanel is loaded
+            if (typeof kitchenPanel !== 'undefined') {
+                kitchenPanel.loadShortcuts();
+                kitchenPanel.renderButtons();
+            }
+        }
+        
         // Focus input
         this.messageInput.focus();
         
@@ -449,6 +431,12 @@ const chat = {
         const statusMsg = document.getElementById('chat-status-message');
         if (statusMsg) {
             statusMsg.innerHTML = '<i class="fas fa-info-circle"></i> Crea o selecciona un chat para comenzar';
+        }
+        
+        // Hide kitchen panel sidebar section
+        const kitchenSec = document.getElementById('kitchen-section');
+        if (kitchenSec) {
+            kitchenSec.classList.add('d-none');
         }
         
         console.log('Chat input disabled');

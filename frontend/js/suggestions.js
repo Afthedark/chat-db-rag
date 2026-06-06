@@ -17,6 +17,14 @@ const suggestions = {
      * Optimized based on business_context.py rules and actual database schema
      */
     questions: {
+        "Planificación de Cocina 🍳": [
+            "Proyecta las puestas de presas broaster por hora para hoy basado en el mismo día de la semana pasada",
+            "Proyecta las puestas de alas por hora para hoy basado en el mismo día de la semana pasada",
+            "Proyecta las puestas de sanduchitas por hora para hoy basado en el mismo día de la semana pasada",
+            "Proyecta las puestas de pollo al horno por hora para hoy basado en el mismo día de la semana pasada",
+            "Consolidado de bebidas y llajua en litros vendidas el día de ayer",
+            "Reporte de líquidos y salsas en litros vendidos el día de hoy"
+        ],
         "Ventas y Facturación": [
             "¿Cuánto vendimos hoy?",
             "¿Cuánto vendimos ayer?",

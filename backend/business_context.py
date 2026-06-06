@@ -13,7 +13,7 @@ EXCLUDED_TABLES = [
     'sinc_actividadesdocumentosectores',
     'sinc_leyendasfacturas',
     'sinc_mensajesservicios',
-    'sinc_parametricaeventossignificativos',
+    'sinc_parametriceventossignificativos',
     'sinc_parametricamotivoanulacions',
     'sinc_parametricapaisorigens',
     'sinc_parametricatipodocumentoidentidads',
@@ -85,7 +85,7 @@ RULE 6 — Time filters:
   The master time column is `p.fecha` in the `pedidos` table.
   Translate natural language dates (e.g. "12 de abril de 2026") to SQL date format ('2026-04-12').
   Use DATE(p.fecha), MONTH(p.fecha), YEAR(p.fecha), HOUR(p.fecha) as appropriate.
-  The current date and yesterday are provided in the prompt context above.
+  The current date, day of week, and time are provided in the prompt context above.
 
 RULE 7 — Time-based analysis (for hour/day/interval questions):
   Use HOUR(p.fecha) to extract hour (0-23) for peak hour analysis.
@@ -113,6 +113,32 @@ RULE 8 — Product search patterns (for product-specific queries):
   Handle abbreviations: +P = con papas, Bñ/Bña = bañadas, pz = piezas, +Pep = con Pepsi.
   Handle typos: "Pollo" may be stored as "Polo" — use flexible LIKE patterns.
 
+RULE 9 — Kitchen Insumos & Recipe Conversion (MANDATORY for Kitchen/Production projection):
+  When asked to project or count raw ingredients or base products (such as "Presa broaster", "Ala", "Sanguchitas", "Pollo al Horno") instead of finished menu items, you must perform a recipe conversion using the `lin_items` table.
+  To convert:
+  - Join `lin_pedidos (lp)` with `items (i) ON lp.item_id = i.item_id`
+  - LEFT JOIN `lin_items li ON i.item_id = li.item_id`
+  - LEFT JOIN `items ir ON li.item_rel_id = ir.item_id` (this represents the ingredient/base item)
+  - To calculate the quantity of base ingredients, multiply the dish quantity (using the RULE 2 formula) by `COALESCE(li.cantidad, 1)`.
+  Formula: SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END * COALESCE(li.cantidad, 1))
+  Target item definitions:
+  * "Presa broaster": `LOWER(ir.descripcion) LIKE '%presa%broaster%' OR (li.item_id IS NULL AND LOWER(i.descripcion) LIKE '%presa%broaster%')`
+  * "Ala" / "Alas": `LOWER(ir.descripcion) LIKE '%presa%ala%' OR (li.item_id IS NULL AND LOWER(i.descripcion) LIKE '%alitas%')`
+  * "Sanduchitas" / "Sándwich": `LOWER(ir.descripcion) LIKE '%filete%sanguchita%' OR LOWER(ir.descripcion) LIKE '%sanguchita%' OR (li.item_id IS NULL AND LOWER(i.descripcion) LIKE '%sanguchita%')`
+  * "Pollo al Horno": `LOWER(ir.descripcion) LIKE '%pollo%horno%' OR LOWER(ir.descripcion) LIKE '%pollo%para%horno%' OR (li.item_id IS NULL AND LOWER(i.descripcion) LIKE '%horno%')`
+
+RULE 10 — Liquids and Sauces Consolidation in Liters (MANDATORY for liquids/drinks/llajua):
+  To calculate liquids/drinks (e.g. Pepsi, refrescos) or sauces (e.g. Llajua/yahua) in liters, use the `litros_por_unidad` column in the `items` table.
+  Multiply the dish quantity (using the RULE 2 formula) by `i.litros_por_unidad`.
+  Formula: SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END * i.litros_por_unidad) AS litros_totales
+  Llajua search: `LOWER(i.descripcion) LIKE '%llajua%' OR LOWER(i.descripcion) LIKE '%yahua%'`
+
+RULE 11 — Historical Day-of-Week and Day-Offset flexibility:
+  Distinguish clearly between different historical offsets relative to the current context date:
+  - "El mismo día de la semana pasada" (Same day last week) is EXACTLY 7 days ago: `DATE_SUB(DATE(p.fecha), INTERVAL 7 DAY)` or `DATE_SUB(CURDATE(), INTERVAL 7 DAY)` (use the appropriate date math).
+  - "El día anterior / ayer" (Yesterday / previous day) is EXACTLY 1 day ago: `DATE_SUB(DATE(p.fecha), INTERVAL 1 DAY)` or `DATE_SUB(CURDATE(), INTERVAL 1 DAY)`.
+  - Always base relative dates on the current date provided in the prompt context.
+
 ORDER STATES for WHERE clauses:
   - Valid/sold:     p.estado = 'CONCLUIDO'  (or != 'ANULADO' to include PENDIENTE)
   - Cancelled:      p.estado = 'ANULADO'
@@ -129,6 +155,10 @@ Main sales flow:
   pedidos (p)      → lin_pedidos (lp)  ON p.pedido_id = lp.pedido_id
   lin_pedidos (lp) → items (i)         ON lp.item_id = i.item_id
   items (i)        → grupo_productos   ON i.grupo_producto_id = grupo_productos.grupo_producto_id
+
+Recipe / Conversion flow:
+  items (i)        → lin_items (li)    ON i.item_id = li.item_id
+  lin_items (li)   → items (ir)        ON li.item_rel_id = ir.item_id (related ingredient item)
 
 Invoice flow (only invoiced sales):
   pedidos (p)      → facturas (f)      ON f.pedido_id = p.pedido_id
@@ -150,11 +180,14 @@ Location:
 TABLE_GLOSSARY = """
 === PRODUCT SEARCH GLOSSARY (use LOWER() + LIKE) ===
 
-User says "sándwich" or "sanguche"  → LOWER(i.descripcion) LIKE '%sanguchita%'
-User says "bañada" or "bña"         → LOWER(i.descripcion) LIKE '%ba%ada%'
-User says "con papas" or "+P"       → LOWER(i.descripcion) LIKE '%papas%'
-User says "para llevar" or "PLL"    → lp.llevar = 1 OR i.descripcion LIKE '%(PLL)%'
-User says "combo" or "mixto"        → i.mixto = 1
+User says "sándwich", "sanguche", "sanduchita" → LOWER(i.descripcion) LIKE '%sanguchita%' OR LOWER(i.descripcion) LIKE '%sangu%'
+User says "bañada" or "bña"                     → LOWER(i.descripcion) LIKE '%ba%ada%'
+User says "con papas" or "+P"                   → LOWER(i.descripcion) LIKE '%papas%'
+User says "para llevar" or "PLL"                → lp.llevar = 1 OR i.descripcion LIKE '%(PLL)%'
+User says "combo" or "mixto"                    → i.mixto = 1
+User says "broaster" or "broste"                → LOWER(i.descripcion) LIKE '%broaster%' OR LOWER(i.descripcion) LIKE '%broste%'
+User says "llajua" or "yahua"                   → LOWER(i.descripcion) LIKE '%llajua%' OR LOWER(i.descripcion) LIKE '%yahua%'
+User says "horno"                               → LOWER(i.descripcion) LIKE '%horno%'
 
 Always use case-insensitive search: LOWER(i.descripcion) LIKE LOWER('%term%')
 """
@@ -301,6 +334,34 @@ WHERE p.estado != 'ANULADO' AND DATE(p.fecha) = DATE_SUB(CURDATE(), INTERVAL 1 D
 GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) 
 ORDER BY ingresos_totales DESC;
 
+KITCHEN DASHBOARD PROJECTIONS & CONSOLIDATION:
+
+Hourly projection of "Presas Broaster" for today, based on the same day last week:
+SELECT DATE_FORMAT(p.fecha, '%H:00') AS hora,
+       SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * COALESCE(li.cantidad, 1)) AS total_presas
+FROM pedidos p
+JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id
+JOIN items i ON lp.item_id = i.item_id
+LEFT JOIN lin_items li ON i.item_id = li.item_id
+LEFT JOIN items ir ON li.item_rel_id = ir.item_id
+WHERE p.estado != 'ANULADO'
+  AND DATE(p.fecha) = DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+  AND (LOWER(ir.descripcion) LIKE '%presa%broaster%' OR (li.item_id IS NULL AND LOWER(i.descripcion) LIKE '%presa%broaster%'))
+GROUP BY DATE_FORMAT(p.fecha, '%H:00')
+ORDER BY hora ASC;
+
+Consolidated liquids (drinks/sauces) in liters for yesterday:
+SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto_liquido,
+       SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * i.litros_por_unidad) AS litros_totales
+FROM pedidos p
+JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id
+JOIN items i ON lp.item_id = i.item_id
+WHERE p.estado != 'ANULADO'
+  AND DATE(p.fecha) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+  AND i.litros_por_unidad > 0
+GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', ''))
+ORDER BY litros_totales DESC;
+
 TIME RANGE FILTERING RULES:
 - For "between X and Y": Use HOUR(p.fecha) >= X AND HOUR(p.fecha) < Y
 - For "at X o'clock": Use HOUR(p.fecha) = X
@@ -347,14 +408,14 @@ SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto_base,
        SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_total 
 FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id 
 WHERE p.estado != 'ANULADO' AND LOWER(i.descripcion) LIKE '%sanguchita%' 
-GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', ''));
+GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)'));
 
 Top 5 products of all time (unified PLL):
 SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto_base, 
        SUM(CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) AS cantidad_vendida 
 FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id 
 WHERE p.estado != 'ANULADO' 
-GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) 
+GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)')) 
 ORDER BY cantidad_vendida DESC LIMIT 5;
 
 Revenue from "bañados" products (Bñ/Bña):
@@ -362,7 +423,7 @@ SELECT TRIM(REPLACE(i.descripcion, '(PLL)', '')) AS producto_banado,
        SUM((CASE WHEN lp.cant_total > 0 THEN lp.cant_total ELSE lp.cantidad END) * lp.precio_unitario) AS ingresos_totales 
 FROM pedidos p JOIN lin_pedidos lp ON p.pedido_id = lp.pedido_id JOIN items i ON lp.item_id = i.item_id 
 WHERE p.estado != 'ANULADO' AND (i.descripcion LIKE '%Bñ%' OR i.descripcion LIKE '%Bña%') 
-GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)', '')) 
+GROUP BY TRIM(REPLACE(i.descripcion, '(PLL)')) 
 ORDER BY ingresos_totales DESC;
 
 "Pollo al Horno" with typo handling:

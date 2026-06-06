@@ -5,6 +5,7 @@ Handles SQL generation, casual question detection, and response generation.
 
 import os
 import re
+import locale
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional, Tuple
 from langchain_core.messages import AIMessage, HumanMessage
@@ -128,17 +129,42 @@ def generate_sql(schema: str, chat_history: List[Any], question: str,
     optimized_schema = truncate_schema(schema)
     limited_history = limit_chat_history(chat_history)
 
-    # Date and DB context
-    today     = datetime.now().strftime('%Y-%m-%d')
-    yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-    db_name   = (db_manager.connection_info or {}).get('database', 'pv_mchicken')
+    # Date, time, day of week and DB context
+    now = datetime.now()
+    today = now.strftime('%Y-%m-%d')
+    yesterday = (now - timedelta(days=1)).strftime('%Y-%m-%d')
+    current_time = now.strftime('%H:%M')
+    
+    # Get Spanish day of the week
+    day_name_es = "Desconocido"
+    current_locale = None
+    try:
+        current_locale = locale.setlocale(locale.LC_TIME)
+        for loc in ['es_ES.utf8', 'spanish', 'es_ES', 'es']:
+            try:
+                locale.setlocale(locale.LC_TIME, loc)
+                day_name_es = now.strftime('%A').capitalize()
+                break
+            except locale.Error:
+                continue
+    except Exception:
+        pass
+    finally:
+        if current_locale:
+            try:
+                locale.setlocale(locale.LC_TIME, current_locale)
+            except Exception:
+                pass
+
+    db_name = (db_manager.connection_info or {}).get('database', 'pv_mchicken')
 
     template = f"""You are an expert SQL analyst for a restaurant and point-of-sale system in Bolivia.
 
 === CURRENT CONTEXT ===
-Database name : {db_name}
-Today's date  : {today}
-Yesterday     : {yesterday}
+Database name       : {db_name}
+Today's date (Hoy)   : {today} (Día de la semana: {day_name_es})
+Yesterday (Ayer)     : {yesterday}
+Current time (Hora)  : {current_time}
 
 <SCHEMA>
 {optimized_schema}

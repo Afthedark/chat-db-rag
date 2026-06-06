@@ -35,18 +35,19 @@ Interfaz de usuario para el asistente de MySQL con persistencia. Frontend vanill
 frontend/
 ├── index.html              # Página principal
 ├── css/
-│   ├── base.css            # Estilos base y variables
+│   ├── base.css            # Estilos base, variables de tema y estilos de Markdown
 │   ├── desktop.css         # Estilos para escritorio
 │   └── mobile.css          # Estilos responsive móvil
 └── js/
     ├── api.js              # Cliente API (Axios)
     ├── app.js              # Inicialización y utilidades
-    ├── chat.js             # UI del chat y mensajes
-    ├── chats.js            # Gestión de chats persistentes
+    ├── chat.js             # UI del chat, mensajes y parseador de Markdown
+    ├── chats.js            # Gestión de chats persistentes y proveedores
     ├── connections.js      # Gestión de conexiones a BD
-    ├── database.js         # Configuración LLM (sidebar)
+    ├── database.js         # Configuración LLM (sidebar) (legacy)
     ├── suggestions.js      # Burbuja de sugerencias
-    └── theme.js            # Gestión de tema claro/oscuro
+    ├── theme.js            # Gestión de tema claro/oscuro
+    └── kitchen.js          # Módulo del Panel de Cocina (Modulación Adaptativa)
 ```
 
 ---
@@ -220,7 +221,7 @@ chat.isProcessing = false;
 - `chat.showWelcomeScreen()` - Mostrar pantalla de bienvenida
 - `chat.hideWelcomeScreen()` - Ocultar pantalla de bienvenida
 - `chat.sendMessage()` - Enviar mensaje
-- `chat.formatMessage(content)` - Formatear mensaje con código
+- `chat.formatMessage(content)` - Formatea el contenido del mensaje de Markdown a HTML utilizando la biblioteca externa `marked.js`, con soporte completo de GFM (tablas, listas y títulos) y fallback de texto plano.
 
 **Tipos de mensajes:**
 - `user` - Mensaje del usuario (derecha, gradiente)
@@ -265,6 +266,25 @@ Maneja el tema claro/oscuro de la aplicación.
 - `theme.init()` - Inicializar tema
 - `theme.toggle()` - Cambiar entre claro/oscuro
 - `theme.setTheme(themeName)` - Establecer tema específico
+
+### 9. `kitchen.js` - Panel de Cocina (Modulación Adaptativa)
+
+Maneja la lógica de accesos rápidos táctiles de producción y proyecciones horarias para el personal de cocina.
+
+**Funcionalidad:**
+- **Persistencia Local**: Guarda y recupera la configuración de los accesos rápidos en `localStorage` (evitando pérdida de datos al recargar).
+- **Atajos Predefinidos**: Inicializa 6 botones preconfigurados con prompts especializados para presas de pollo, alitas, sanduchitas, pollo al horno y volumen de líquidos.
+- **Configuración en Vivo**: Carga dinámicamente un modal con un formulario completo para modificar etiquetas, categorías de áreas (Área Broaster, Plancha y Horno, Líquidos y Salsas, etc.), y los prompts a inyectar.
+- **Automatización del Envío**: Al hacer clic en un atajo, inyecta el prompt en el campo de texto y gatilla inmediatamente `chat.sendMessage()` para iniciar el flujo del RAG.
+
+**Métodos principales:**
+- `kitchenPanel.init()` - Registra event listeners, carga configuraciones y dibuja los botones.
+- `kitchenPanel.loadShortcuts()` - Recupera del storage local o usa los valores preconfigurados por defecto.
+- `kitchenPanel.renderButtons()` - Dibuja los botones clasificados por colores y categorías.
+- `kitchenPanel.showConfigModal()` - Despliega el modal de configuración general.
+- `kitchenPanel.addNewShortCut()` - Agrega un acceso rápido en blanco en el formulario del modal.
+- `kitchenPanel.deleteShortcut(index)` - Remueve un atajo con confirmación previa.
+- `kitchenPanel.saveConfig()` - Procesa todos los campos del formulario y guarda los cambios en el storage local y la barra lateral.
 
 ---
 

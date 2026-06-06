@@ -120,6 +120,7 @@ class Config:
     OLLAMA_CONTEXT_LIMIT   # Tokens de contexto num_ctx (default: 8192)
     MAX_CHAT_HISTORY       # Mensajes previos enviados al LLM (default: 5)
     GEMINI_API_KEY         # Clave de Google Gemini API
+    OPENROUTER_API_KEY     # Clave de API de OpenRouter
     CORS_ORIGINS           # Lista de orígenes permitidos
     SQLALCHEMY_DATABASE_URI # URL de conexión a BD de persistencia
     ENCRYPTION_KEY         # Clave Fernet para cifrado de contraseñas
@@ -401,12 +402,20 @@ Usa `google.genai` SDK. Convierte el historial de mensajes al formato
 `types.Content` de Google. Si se pasa `api_key` en el request, crea un
 cliente temporal con esa clave (en vez de la del `.env`).
 
+#### `OpenRouterClient`
+
+```python
+def query(self, model, messages, temperature=0.2, api_key=None) -> str
+```
+
+Envía solicitudes HTTP a la API de OpenRouter (`https://openrouter.ai/api/v1/chat/completions`) usando cualquier modelo especificado (ej. `nvidia/nemotron-3-ultra-550b-a55b:free`). Si no se provee una API Key en el request, utiliza `OPENROUTER_API_KEY` configurada en el `.env`.
+
 #### `LLMManager`
 
 Singleton que expone:
 ```python
 llm_manager.query(provider, model_name, messages, temperature, api_key)
-# provider: "ollama" | "gemini"
+# provider: "ollama" | "gemini" | "openrouter"
 ```
 
 ---
@@ -460,7 +469,7 @@ y en `database.py`.
 
 ```python
 EXCLUDED_TABLES   # Lista de ~38 tablas SIAT/fiscal a excluir del schema
-BUSINESS_RULES    # 6 reglas SQL críticas (estados, cantidades, formato Bs, etc.)
+BUSINESS_RULES    # 11 reglas SQL críticas (estados, cantidades, formatos, fórmulas de insumos y litros, offsets temporales, etc.)
 BUSINESS_RELATIONSHIPS  # Mapa de JOINs correctos entre tablas
 TABLE_GLOSSARY    # Glosario usuario → patrón LIKE SQL
 ```
