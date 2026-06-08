@@ -3,12 +3,10 @@
  * Handles all HTTP requests to the Flask backend
  */
 
-// Auto-detect API URL based on current hostname
-// This allows the app to work when accessed from other devices on the same network
-const API_HOST = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'localhost' 
-    : window.location.hostname;
-const API_BASE_URL = `http://${API_HOST}:5000/api`;
+// ============================================================
+// API URL — Cambiar esta IP si el servidor cambia de dirección
+// ============================================================
+const API_BASE_URL = 'http://172.21.29.45:5000/api';
 
 // Configure axios defaults
 axios.defaults.baseURL = API_BASE_URL;

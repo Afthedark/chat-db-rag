@@ -126,8 +126,8 @@
                         </div>
                     </div>
                     <div class="chat-header-actions">
-                        <button class="btn btn-outline-warning btn-sm me-2 d-none" id="btn-toggle-kitchen" title="Mostrar/Ocultar Panel de Cocina">
-                            <i class="fas fa-utensils"></i> <span class="d-none d-md-inline">Cocina</span>
+                        <button class="btn btn-outline-warning btn-sm me-2 d-none" id="btn-toggle-kitchen" title="Mostrar/Ocultar Panel de Producción">
+                            <i class="fas fa-chart-line"></i> <span class="d-none d-md-inline">Producción</span>
                         </button>
                         <!-- Theme toggle will be inserted here by theme.js -->
                     </div>
@@ -180,21 +180,121 @@
                         </div>
                     </div>
                     
-                    <!-- Columna Derecha: Panel Predictivo de Cocina -->
-                    <div class="col-md-4 col-lg-3 d-flex flex-column p-3 bg-light" id="kitchen-pane" style="height: 100%; min-height: 0; overflow-y: auto;">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0 text-warning"><i class="fas fa-utensils"></i> Panel Predictivo de Cocina</h5>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-outline-warning btn-sm" id="btn-config-kitchen">
-                                    <i class="fas fa-cog"></i> Configurar Panel
+                    <!-- Columna Derecha: Predicción de Demanda y Control de Producción -->
+                    <div class="col-md-4 col-lg-3 d-flex flex-column p-0 bg-light border-start" id="kitchen-pane" style="height: 100%; min-height: 0;">
+                        <!-- Header del Panel -->
+                        <div class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 text-warning fw-bold" style="font-size: 0.85rem;"><i class="fas fa-chart-line"></i> Demanda y Producción</h6>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-outline-warning btn-xs py-1 px-2" id="btn-config-kitchen" style="font-size:0.75rem">
+                                    <i class="fas fa-cog"></i> Config
                                 </button>
-                                <button class="btn btn-outline-secondary btn-sm" id="btn-collapse-kitchen" title="Contraer Panel de Cocina">
+                                <button class="btn btn-outline-secondary btn-xs py-1 px-2" id="btn-collapse-kitchen" title="Contraer Panel" style="font-size:0.75rem">
                                     <i class="fas fa-chevron-right"></i>
                                 </button>
                             </div>
                         </div>
-                        <div id="kitchen-buttons-container" class="row g-3">
-                            <!-- Se renderizará dinámicamente -->
+                        
+                        <!-- Pestañas de Navegación -->
+                        <ul class="nav nav-tabs nav-fill custom-kds-tabs" id="kdsTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active py-2" id="tab-shortcuts-btn" data-bs-toggle="tab" data-bs-target="#tab-shortcuts" type="button" role="tab" aria-selected="true">
+                                    <i class="fas fa-bolt"></i> Atajos
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link py-2" id="tab-planilla-btn" data-bs-toggle="tab" data-bs-target="#tab-planilla" type="button" role="tab" aria-selected="false">
+                                    <i class="fas fa-tasks"></i> Planilla <span class="badge rounded-pill bg-danger d-none" id="kds-alert-badge">!</span>
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <!-- Contenido de las Pestañas -->
+                        <div class="tab-content flex-grow-1 d-flex flex-column" style="overflow-y: auto; min-height: 0;">
+                            <!-- PESTAÑA ATAJOS -->
+                            <div class="tab-pane fade show active p-3" id="tab-shortcuts" role="tabpanel" tabindex="0">
+                                <div id="kitchen-buttons-container" class="row g-3">
+                                    <!-- Se renderizará dinámicamente -->
+                                </div>
+                            </div>
+                            
+                            <!-- PESTAÑA PLANILLA DE PRODUCCIÓN -->
+                            <div class="tab-pane fade d-flex flex-column p-3" id="tab-planilla" role="tabpanel" tabindex="0" style="height: 100%;">
+                                <!-- Banner Onboarding Comercial -->
+                                <div class="alert alert-info py-2 px-3 mb-3 border-0 rounded shadow-sm d-flex align-items-start gap-2" id="kds-onboarding-banner" style="font-size: 0.78rem; background: var(--bg-card); border-left: 3px solid var(--warning) !important;">
+                                    <i class="fas fa-lightbulb text-warning mt-1 flex-shrink-0"></i>
+                                    <div class="w-100">
+                                        <strong>Tip Comercial:</strong> Proyecta la demanda de hoy usando históricos para evitar el sobrestock. Registra la producción real por hora con <strong>-</strong> y <strong>+</strong> para medir la precisión.
+                                        <button type="button" class="btn-close p-1 float-end" style="font-size:0.5rem" onclick="document.getElementById('kds-onboarding-banner').remove()"></button>
+                                    </div>
+                                </div>
+
+                                <!-- Resumen KPIs de Planificación -->
+                                <div id="kds-summary-container" class="mb-3 d-none">
+                                    <div class="card shadow-sm border-0 mb-2" style="background: var(--bg-card);">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="text-muted fw-semibold" style="font-size: 0.75rem;">Precisión de Demanda</span>
+                                                <span class="fw-bold text-success" id="kds-efficiency-pct" style="font-size: 0.95rem;">0%</span>
+                                            </div>
+                                            <div class="progress mb-2" style="height: 8px; border-radius: 4px; background: rgba(0,0,0,0.1);">
+                                                <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" id="kds-progress-bar" role="progressbar" style="width: 0%; border-radius: 4px;"></div>
+                                            </div>
+                                            <div class="row g-1 text-center mt-2" style="font-size: 0.72rem;">
+                                                <div class="col-4 border-end">
+                                                    <div class="text-muted">Proyectado</div>
+                                                    <div class="fw-bold text-dark" id="kds-total-projected">0</div>
+                                                </div>
+                                                <div class="col-4 border-end">
+                                                    <div class="text-muted">Producido</div>
+                                                    <div class="fw-bold text-primary" id="kds-total-real">0</div>
+                                                </div>
+                                                <div class="col-4">
+                                                    <div class="text-muted">Desviación</div>
+                                                    <div class="fw-bold" id="kds-total-deviation">0</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center px-1">
+                                        <span class="badge bg-secondary" id="kds-active-item" style="font-size:0.75rem">Insumo: Ninguno</span>
+                                        <button class="btn btn-link btn-xs text-danger p-0" onclick="kitchenPanel.clearRealProduction()" style="font-size:0.75rem; text-decoration:none;">
+                                            <i class="fas fa-trash-alt"></i> Limpiar Planilla
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Estado Vacío Comercial ("Glow Metrics State") -->
+                                <div class="kds-empty-card d-flex flex-column align-items-center justify-content-center text-center p-4 flex-grow-1" id="kds-empty-state">
+                                    <div class="kds-glow-icon mb-3">
+                                        <i class="fas fa-chart-line text-warning fa-3x pulse-glow"></i>
+                                    </div>
+                                    <h6 class="fw-bold text-dark mb-2">Planificación Comercial de Sucursal</h6>
+                                    <p class="text-muted mb-4" style="font-size: 0.78rem;">
+                                        Selecciona un atajo predictivo en la pestaña <strong>"Atajos"</strong> para cargar la estimación de la IA y comenzar el control de producción.
+                                    </p>
+                                    <button class="btn btn-warning btn-sm shadow" onclick="document.getElementById('tab-shortcuts-btn').click();" style="border-radius: 20px;">
+                                        <i class="fas fa-bolt"></i> Ver Atajos Rápidos
+                                    </button>
+                                </div>
+
+                                <!-- Planilla de Control Horario -->
+                                <div class="table-responsive d-none flex-grow-1" id="kds-table-container" style="overflow-y: auto;">
+                                    <table class="table table-sm table-hover align-middle kds-table" style="font-size:0.8rem;">
+                                        <thead class="sticky-top bg-light">
+                                            <tr>
+                                                <th>Hora</th>
+                                                <th class="text-center">IA (Est.)</th>
+                                                <th class="text-center" style="width: 100px;">Producción</th>
+                                                <th class="text-center">Desv.</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="kds-table-body">
+                                            <!-- Se rellenará dinámicamente -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -432,12 +532,12 @@
         </div>
     </div>
     
-    <!-- Modal de Configuración del Panel de Cocina -->
+                    <!-- Modal de Configuración del Panel de Producción -->
     <div class="modal fade" id="kitchenConfigModal" tabindex="-1" aria-labelledby="kitchenConfigModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="kitchenConfigModalLabel"><i class="fas fa-cog"></i> Configurar Accesos Rápidos de Cocina</h5>
+                    <h5 class="modal-title" id="kitchenConfigModalLabel"><i class="fas fa-cog"></i> Configurar Accesos Rápidos de Producción</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
@@ -449,6 +549,9 @@
                     </button>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-danger me-auto" onclick="kitchenPanel.resetDefaults()">
+                        <i class="fas fa-undo"></i> Restablecer Predeterminados
+                    </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-success" onclick="kitchenPanel.saveConfig()">
                         <i class="fas fa-save"></i> Guardar Configuración

@@ -161,6 +161,9 @@ const chat = {
                     const data = response.data;
                     if (data.type === 'sql') {
                         this.addAIResponse(data.message, data.sql, data.sql_results);
+                        if (typeof kitchenPanel !== 'undefined') {
+                            kitchenPanel.parseProjectionData(data.message, data.sql_results);
+                        }
                     } else {
                         this.addMessage('assistant', data.message, true);
                     }

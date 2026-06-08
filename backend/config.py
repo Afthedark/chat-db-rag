@@ -29,9 +29,7 @@ class Config:
     OLLAMA_CONTEXT_LIMIT = int(os.getenv('OLLAMA_CONTEXT_LIMIT', '8192'))
     MAX_CHAT_HISTORY = int(os.getenv('MAX_CHAT_HISTORY', '5'))
     
-    # Gemini settings
-    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY_ID_1', '')
-    
+
     # CORS settings - allow all origins for local network sharing
     # In production, restrict this to specific domains
     CORS_ORIGINS = "*"

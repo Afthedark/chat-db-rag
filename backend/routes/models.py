@@ -4,7 +4,7 @@ Handles LLM provider and model listing.
 """
 
 from flask import Blueprint, request, jsonify
-from services.llm import llm_manager, get_ollama_models, is_gemini_available
+from services.llm import llm_manager, get_ollama_models
 
 models_bp = Blueprint('models', __name__)
 
@@ -27,12 +27,6 @@ def get_providers():
                 'id': 'ollama',
                 'name': 'Ollama (Local)',
                 'description': 'Use local models like Llama, Gemma, DeepSeek'
-            })
-        elif provider == 'gemini':
-            formatted_providers.append({
-                'id': 'gemini',
-                'name': 'Google Gemini (API)',
-                'description': 'Use Google Gemini API for advanced responses'
             })
     
     return jsonify({
@@ -62,43 +56,13 @@ def get_ollama_models_list():
         }), 500
 
 
-@models_bp.route('/gemini', methods=['GET'])
-def get_gemini_models():
-    """
-    Get list of available Gemini models.
-    
-    Returns:
-        JSON with list of model names
-    """
-    if not is_gemini_available():
-        return jsonify({
-            'success': False,
-            'error': 'Gemini API not available'
-        }), 400
-    
-    models = llm_manager.get_available_models('gemini')
-    
-    # Format models for frontend
-    formatted_models = []
-    for model in models:
-        formatted_models.append({
-            'id': model,
-            'name': model.replace('gemini-', 'Gemini ').replace('-', ' ').title()
-        })
-    
-    return jsonify({
-        'success': True,
-        'models': formatted_models
-    })
-
-
 @models_bp.route('/<provider>', methods=['GET'])
 def get_models_for_provider(provider):
     """
     Get available models for a specific provider.
     
     Args:
-        provider: Provider name ('ollama' or 'gemini')
+        provider: Provider name ('ollama')
     
     Returns:
         JSON with list of models

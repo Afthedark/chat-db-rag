@@ -157,7 +157,7 @@
   .suggestions-bubble {
     position: fixed;
     bottom: 120px;
-    right: 30px;
+    left: 30px;
     width: 64px;
     height: 64px;
     background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
@@ -184,7 +184,7 @@
   .suggestions-bubble-badge {
     position: absolute;
     top: -4px;
-    right: -4px;
+    left: -4px;
     background: linear-gradient(135deg, #ff4757 0%, #ff6b7a 100%);
     color: var(--text-white);
     font-size: var(--text-xs);
@@ -219,7 +219,7 @@
   .suggestions-panel {
     position: fixed;
     top: 50%;
-    right: 30px;
+    left: 30px;
     transform: translateY(-50%);
     width: 420px;
     max-height: 85vh;
@@ -650,4 +650,124 @@
 
 #chat-workspace.kitchen-collapsed #kitchen-pane {
   display: none !important;
+}
+
+/* Custom Tabs for KDS Panel */
+.custom-kds-tabs {
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 10px;
+}
+
+.custom-kds-tabs .nav-link {
+  color: var(--text-muted);
+  border: none;
+  font-size: 0.8rem;
+  font-weight: var(--font-semibold);
+  background: transparent;
+  transition: all var(--transition-fast);
+  border-bottom: 2px solid transparent;
+  outline: none;
+}
+
+.custom-kds-tabs .nav-link:hover {
+  color: var(--text-primary);
+  border-bottom-color: var(--border-color);
+}
+
+.custom-kds-tabs .nav-link.active {
+  color: var(--warning) !important;
+  background: transparent !important;
+  border-bottom: 2px solid var(--warning) !important;
+}
+
+/* Empty State Styling */
+.kds-empty-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--border-color);
+  margin-top: 15px;
+}
+
+.kds-glow-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.1);
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.1);
+}
+
+/* Active Row Neon highlighting */
+.kds-active-row {
+  position: relative;
+  box-shadow: inset 5px 0 0 0 var(--warning);
+  background-color: rgba(245, 158, 11, 0.03) !important;
+}
+
+.kds-active-row td {
+  background-color: rgba(245, 158, 11, 0.05) !important;
+}
+
+/* Pulse Animation for Current Hour badge */
+@keyframes kds-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+.kds-pulse-badge {
+  animation: kds-pulse 2s infinite;
+  font-size: 0.65rem !important;
+}
+
+/* Planilla table styling */
+.kds-table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  font-weight: var(--font-bold);
+  padding: 8px 4px;
+}
+
+.kds-table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.kds-table tr:hover:not(.kds-active-row) td {
+  background-color: var(--bg-hover) !important;
+}
+
+/* Buttons +/- */
+.btn-xs {
+  padding: 1px 6px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  border-radius: 3px;
+}
+
+.kds-input-real {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.kds-input-real:focus {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border-color: var(--warning);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
 }
