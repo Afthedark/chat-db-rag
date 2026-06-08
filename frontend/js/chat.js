@@ -361,7 +361,7 @@ const chat = {
     },
 
     /**
-     * Enable chat input
+     * Enable chat input and show workspace split panes
      */
     enableInput() {
         console.log('Chat enableInput called');
@@ -390,15 +390,22 @@ const chat = {
             statusMsg.innerHTML = '<i class="fas fa-check-circle text-success"></i> Listo para chatear';
         }
         
-        // Show kitchen panel sidebar section
-        const kitchenSec = document.getElementById('kitchen-section');
-        if (kitchenSec) {
-            kitchenSec.classList.remove('d-none');
-            // Dynamically refresh buttons from localstorage if kitchenPanel is loaded
+        // Show split workspace container
+        const workspace = document.getElementById('chat-workspace');
+        if (workspace) {
+            workspace.classList.remove('d-none');
+            
+            // Dynamically refresh kitchen buttons from localstorage if kitchenPanel is loaded
             if (typeof kitchenPanel !== 'undefined') {
                 kitchenPanel.loadShortcuts();
                 kitchenPanel.renderButtons();
             }
+        }
+
+        // Show header toggle button
+        const btnToggleHeader = document.getElementById('btn-toggle-kitchen');
+        if (btnToggleHeader) {
+            btnToggleHeader.classList.remove('d-none');
         }
         
         // Focus input
@@ -408,7 +415,7 @@ const chat = {
     },
 
     /**
-     * Disable chat input
+     * Disable chat input and hide workspace split panes
      */
     disableInput() {
         console.log('Chat disableInput called');
@@ -433,10 +440,16 @@ const chat = {
             statusMsg.innerHTML = '<i class="fas fa-info-circle"></i> Crea o selecciona un chat para comenzar';
         }
         
-        // Hide kitchen panel sidebar section
-        const kitchenSec = document.getElementById('kitchen-section');
-        if (kitchenSec) {
-            kitchenSec.classList.add('d-none');
+        // Hide split workspace container
+        const workspace = document.getElementById('chat-workspace');
+        if (workspace) {
+            workspace.classList.add('d-none');
+        }
+
+        // Hide header toggle button
+        const btnToggleHeader = document.getElementById('btn-toggle-kitchen');
+        if (btnToggleHeader) {
+            btnToggleHeader.classList.add('d-none');
         }
         
         console.log('Chat input disabled');

@@ -564,36 +564,90 @@
 }
 
 /* ============================================
-   KITCHEN PANEL STYLES
+   SPLIT WORKSPACE & KITCHEN PANEL STYLES
    ============================================ */
 
-#panel-produccion-cocina {
-    transition: all 0.3s ease-in-out;
+#chat-workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+#chat-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background-color: var(--bg-chat);
+}
+
+#kitchen-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  background-color: var(--bg-sidebar) !important;
+  border-left: 1px solid var(--border-color);
+  padding: var(--space-4) var(--space-3) !important;
 }
 
 .btn-outline-orange {
-    color: #fd7e14;
-    border-color: #fd7e14;
+  color: #f97316;
+  border-color: #f97316;
 }
 
 .btn-outline-orange:hover {
-    color: #fff;
-    background-color: #fd7e14;
-    border-color: #fd7e14;
+  color: #fff;
+  background-color: #f97316;
+  border-color: #f97316;
 }
 
-.kitchen-buttons-container {
-    max-height: 300px;
-    overflow-y: auto;
-    padding-right: 2px;
+/* Card custom adjustments for Kitchen Panel */
+#kitchen-pane .card {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-normal);
+  border: 1px solid var(--border-color) !important;
 }
 
-.kitchen-category-title {
-    font-size: 0.72rem;
-    font-weight: bold;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    margin-top: 10px;
-    margin-bottom: 4px;
-    letter-spacing: 0.5px;
+#kitchen-pane .card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+#kitchen-pane .card-header {
+  background-color: var(--bg-hover) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+#kitchen-pane .card-header h6 {
+  color: var(--text-primary) !important;
+}
+
+#kitchen-pane .btn {
+  font-weight: var(--font-semibold);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+#kitchen-pane .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Collapsible States */
+#chat-workspace.kitchen-collapsed #chat-pane {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 0 0 100% !important;
+  border-right: none !important;
+}
+
+#chat-workspace.kitchen-collapsed #kitchen-pane {
+  display: none !important;
 }

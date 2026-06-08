@@ -77,24 +77,6 @@
                         </div>
                     </div>
                     
-                    <!-- Kitchen Section -->
-                    <div class="section-card kitchen-section d-none" id="kitchen-section">
-                        <div class="section-header" data-bs-toggle="collapse" data-bs-target="#kitchen-collapse" aria-expanded="true">
-                            <h6 class="section-title">
-                                <i class="fas fa-utensils text-warning"></i> Panel de Cocina
-                            </h6>
-                            <i class="fas fa-chevron-down section-toggle"></i>
-                        </div>
-                        <div class="collapse show" id="kitchen-collapse">
-                            <div id="kitchen-buttons-container" class="kitchen-buttons-container d-flex flex-column gap-1 mt-2">
-                                <!-- Se renderizará dinámicamente -->
-                            </div>
-                            <button class="btn btn-outline-warning btn-sm w-100 mt-2" id="btn-config-kitchen">
-                                <i class="fas fa-cog"></i> Configurar Panel
-                            </button>
-                        </div>
-                    </div>
-                    
                     <!-- Current Chat Info (Collapsible) -->
                     <div class="section-card current-chat-section">
                         <div class="section-header" data-bs-toggle="collapse" data-bs-target="#current-chat-collapse" aria-expanded="false">
@@ -144,6 +126,9 @@
                         </div>
                     </div>
                     <div class="chat-header-actions">
+                        <button class="btn btn-outline-warning btn-sm me-2 d-none" id="btn-toggle-kitchen" title="Mostrar/Ocultar Panel de Cocina">
+                            <i class="fas fa-utensils"></i> <span class="d-none d-md-inline">Cocina</span>
+                        </button>
                         <!-- Theme toggle will be inserted here by theme.js -->
                     </div>
                 </div>
@@ -168,26 +153,50 @@
                         </p>
                     </div>
                 </div>
-                
-                <!-- Messages Container (hidden when no chat selected) -->
-                <div class="messages-container d-none" id="messages-container">
-                    <!-- Messages will be inserted here -->
-                </div>
-                
-                <!-- Input Area -->
-                <div class="input-area">
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="message-input" 
-                               placeholder="Escribe tu pregunta sobre la base de datos..." 
-                               disabled>
-                        <button class="btn btn-primary" type="button" id="btn-send" disabled>
-                            <i class="fas fa-paper-plane"></i> <span class="btn-text">Enviar</span>
-                        </button>
+
+                <!-- Split Workspace (shown when chat selected) -->
+                <div class="chat-workspace row g-0 flex-grow-1 d-none" id="chat-workspace">
+                    <!-- Columna Izquierda: Asistente IA (Chat) -->
+                    <div class="col-md-8 col-lg-9 d-flex flex-column border-end" id="chat-pane" style="height: 100%; min-height: 0;">
+                        <!-- Messages Container -->
+                        <div class="messages-container d-none" id="messages-container" style="flex: 1; overflow-y: auto;">
+                            <!-- Messages will be inserted here -->
+                        </div>
+                        
+                        <!-- Input Area -->
+                        <div class="input-area mt-auto">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="message-input" 
+                                       placeholder="Escribe tu pregunta sobre la base de datos..." 
+                                       disabled>
+                                <button class="btn btn-primary" type="button" id="btn-send" disabled>
+                                    <i class="fas fa-paper-plane"></i> <span class="btn-text">Enviar</span>
+                                </button>
+                            </div>
+                            <small class="text-muted mt-1 d-block" id="chat-status-message">
+                                <i class="fas fa-info-circle"></i> 
+                                Conecta a una base de datos primero para comenzar a chatear
+                            </small>
+                        </div>
                     </div>
-                    <small class="text-muted mt-1 d-block" id="chat-status-message">
-                        <i class="fas fa-info-circle"></i> 
-                        Conecta a una base de datos primero para comenzar a chatear
-                    </small>
+                    
+                    <!-- Columna Derecha: Panel Predictivo de Cocina -->
+                    <div class="col-md-4 col-lg-3 d-flex flex-column p-3 bg-light" id="kitchen-pane" style="height: 100%; min-height: 0; overflow-y: auto;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0 text-warning"><i class="fas fa-utensils"></i> Panel Predictivo de Cocina</h5>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-warning btn-sm" id="btn-config-kitchen">
+                                    <i class="fas fa-cog"></i> Configurar Panel
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" id="btn-collapse-kitchen" title="Contraer Panel de Cocina">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="kitchen-buttons-container" class="row g-3">
+                            <!-- Se renderizará dinámicamente -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -45,6 +45,9 @@ const kitchenPanel = {
             btnConfig.addEventListener('click', () => this.showConfigModal());
         }
 
+        // Event listeners para colapsar/expandir panel de cocina
+        this.bindCollapseEvents();
+
         console.log('Kitchen module initialized successfully');
     },
 
@@ -74,7 +77,7 @@ const kitchenPanel = {
     },
 
     /**
-     * Renderizar botones en el sidebar
+     * Renderizar botones en la grilla del panel lateral derecho
      */
     renderButtons() {
         const container = document.getElementById('kitchen-buttons-container');
@@ -83,7 +86,7 @@ const kitchenPanel = {
         container.innerHTML = '';
 
         if (this.shortcuts.length === 0) {
-            container.innerHTML = '<small class="text-muted text-center py-2">No hay accesos rápidos</small>';
+            container.innerHTML = '<div class="col-12 text-center text-muted py-4">No hay accesos rápidos configurados</div>';
             return;
         }
 
@@ -95,19 +98,33 @@ const kitchenPanel = {
             grouped[cat].push(s);
         });
 
-        // Generar HTML
+        // Generar HTML con estructura de columnas (apiladas verticalmente en col-12)
         let html = '';
         for (const [category, items] of Object.entries(grouped)) {
-            html += `<div class="kitchen-category-title mt-2 mb-1">${this.escapeHtml(category)}</div>`;
+            const btnClass = this.categories[category] || 'btn-outline-secondary';
+            html += `
+                <div class="col-12 mb-2">
+                    <div class="card h-100 shadow-sm border border-secondary border-opacity-10">
+                        <div class="card-header bg-light py-2 px-3 border-bottom-0">
+                            <h6 class="mb-0 fw-bold text-secondary" style="font-size: 0.9rem;">${this.escapeHtml(category)}</h6>
+                        </div>
+                        <div class="card-body d-flex flex-column gap-2 p-2">
+            `;
+            
             items.forEach(item => {
-                const btnClass = this.categories[category] || 'btn-outline-secondary';
                 html += `
-                    <button type="button" class="btn btn-sm ${btnClass} text-start w-100 py-2 px-3 mb-1 btn-kitchen-shortcut" 
-                            data-prompt="${this.escapeHtml(item.prompt)}">
+                    <button type="button" class="btn ${btnClass} text-start w-100 py-2 px-2 btn-kitchen-shortcut" 
+                            data-prompt="${this.escapeHtml(item.prompt)}" style="font-size: 0.85rem;">
                         ${this.escapeHtml(item.label)}
                     </button>
                 `;
             });
+            
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
         container.innerHTML = html;
@@ -275,6 +292,54 @@ const kitchenPanel = {
 
         if (typeof app !== 'undefined') {
             app.showToast('Configuración de cocina guardada con éxito', 'success');
+        }
+    },
+
+    /**
+     * Configurar eventos y estado de colapsado para el panel de cocina
+     */
+    bindCollapseEvents() {
+        const workspace = document.getElementById('chat-workspace');
+        const btnToggleHeader = document.getElementById('btn-toggle-kitchen');
+        const btnCollapseKitchen = document.getElementById('btn-collapse-kitchen');
+
+        if (!workspace) return;
+
+        // Cargar estado guardado (por defecto expandido)
+        const isCollapsed = localStorage.getItem('kitchen-collapsed') === 'true';
+        if (isCollapsed) {
+            workspace.classList.add('kitchen-collapsed');
+            if (btnToggleHeader) {
+                btnToggleHeader.classList.remove('btn-outline-warning');
+                btnToggleHeader.classList.add('btn-warning');
+            }
+        }
+
+        const toggleKitchen = () => {
+            const willCollapse = !workspace.classList.contains('kitchen-collapsed');
+            if (willCollapse) {
+                workspace.classList.add('kitchen-collapsed');
+                localStorage.setItem('kitchen-collapsed', 'true');
+                if (btnToggleHeader) {
+                    btnToggleHeader.classList.remove('btn-outline-warning');
+                    btnToggleHeader.classList.add('btn-warning');
+                }
+            } else {
+                workspace.classList.remove('kitchen-collapsed');
+                localStorage.setItem('kitchen-collapsed', 'false');
+                if (btnToggleHeader) {
+                    btnToggleHeader.classList.remove('btn-warning');
+                    btnToggleHeader.classList.add('btn-outline-warning');
+                }
+            }
+        };
+
+        if (btnToggleHeader) {
+            btnToggleHeader.addEventListener('click', toggleKitchen);
+        }
+
+        if (btnCollapseKitchen) {
+            btnCollapseKitchen.addEventListener('click', toggleKitchen);
         }
     },
 
