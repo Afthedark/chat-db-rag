@@ -235,7 +235,7 @@ const connections = {
             return;
         }
 
-        app.showLoading('Guardando conexión...');
+        app.showToast('Guardando conexión...', 'info');
 
         try {
             const response = await api.connections.create(data);
@@ -276,7 +276,7 @@ const connections = {
             console.error('Save connection error:', error);
             app.showToast('Error al guardar la conexión', 'error');
         } finally {
-            app.hideLoading();
+            // No hideLoading needed
         }
     },
 
@@ -302,7 +302,7 @@ const connections = {
      */
     async connect(id) {
         console.log('Connecting to database ID:', id);
-        app.showLoading('Conectando a la base de datos...');
+        app.showToast('Conectando a la base de datos...', 'info');
 
         try {
             const response = await api.connections.connect(id);
@@ -348,7 +348,7 @@ const connections = {
             console.error('Connect error:', error);
             app.showToast('Error al conectar', 'error');
         } finally {
-            app.hideLoading();
+            // No hideLoading needed
         }
     },
 
@@ -356,7 +356,7 @@ const connections = {
      * Test a saved connection
      */
     async test(id) {
-        app.showLoading('Testing connection...');
+        app.showToast('Probando conexión...', 'info');
 
         try {
             const response = await api.connections.test(id);
@@ -369,7 +369,7 @@ const connections = {
             console.error('Test error:', error);
             app.showToast('Connection test failed', 'error');
         } finally {
-            app.hideLoading();
+            // No hideLoading needed
         }
     },
 
@@ -515,7 +515,7 @@ const connections = {
             return;
         }
 
-        app.showLoading('Guardando cambios...');
+        app.showToast('Guardando cambios...', 'info');
 
         try {
             // Build update payload (only include password if provided)
@@ -565,7 +565,7 @@ const connections = {
             console.error('Update connection error:', error);
             app.showToast('Error al actualizar la conexión', 'error');
         } finally {
-            app.hideLoading();
+            // No hideLoading needed
         }
     }
 };
